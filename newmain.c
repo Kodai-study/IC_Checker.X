@@ -10,5 +10,6 @@
 
 void main(void) {
     LATA = 0b10101010;
+    LATB = 0b01010101;
     return;
 }
