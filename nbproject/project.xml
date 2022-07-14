@@ -6,7 +6,7 @@
             <name>IC_Checker</name>
             <creation-uuid>3f1cc615-25cf-4cbb-952a-4d0e0fc23660</creation-uuid>
             <make-project-type>0</make-project-type>
-            <c-extensions/>
+            <c-extensions>c</c-extensions>
             <cpp-extensions/>
             <header-extensions/>
             <asminc-extensions/>
