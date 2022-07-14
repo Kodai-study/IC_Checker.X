@@ -1,0 +1,6 @@
+# Default ignored files
+*
+!configurations.xml
+!project.xml
+!Makefile-genesis.properties
+!.gitignore
