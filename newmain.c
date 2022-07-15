@@ -68,14 +68,16 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
-
+#include "fucntions.h"
+#define _XTAL_FREQ 1000000
 
 
 void main(void) {
-    TRISA = 0x00;
+    TRISA = 0x00; 
     TRISB = 0x00;
-    //ADCON1 = 0xff;
-    LATA = 0b10101010;
-    LATB = 0b01010101;
+    LATA = 0b00001001;
+    while(1){
+        dff_Check();
+    }
     return;
 }
