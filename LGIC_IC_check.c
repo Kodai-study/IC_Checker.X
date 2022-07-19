@@ -91,12 +91,16 @@ int nand_check(){
     TRISC = 0b10101010;
     const unsigned char outBit = 0b00011001;
     const unsigned char readBit = 0b11010100;
+    const int result[] = {1, 1, 1, 0};
     LATC &= ~outBit;
     __delay_ms(PLUS_TIME);
-    unsigned char data = PORTC & readBit;
-}
-
-
-void portInit(){
+    for(int i = 0;i <= 3; i++){
+        unsigned char data = PORTC & readBit;
+        if(result[i] == 0 && data != 0){
+            return -1;
+        } else if(result[i] == 1 && data != readBit){
+            return -1;
+        }
+    }
     
 }
