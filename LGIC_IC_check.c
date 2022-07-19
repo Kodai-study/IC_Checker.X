@@ -10,53 +10,50 @@
 
 
 #include <xc.h>
-#define _XTAL_FREQ 1000000
+#include "datas.h"
+#include "fucntions.h"
 
-#define CLOCK(x) x = 0; __delay_ms(5); x = 1;
 
+/*
+ *?D-????????
+ * 
+ * 
+ * 
+ */
 void dff_Check(){
+        LATA = 0b00000101;  //??????????
     /* ???????????? */
         LATAbits.LA0 = 0;   //?????
-        __delay_ms(5);
+        __delay_ms(PLUS_TIME);
         LATAbits.LA0 = 1;
         
-        __delay_ms(500);
+        __delay_ms(WAIT_TIME);
         
-        LATAbits.LA3 = 0;   //???????
-        __delay_ms(5);
-        LATAbits.LA3 = 1;
-        __delay_ms(1000);
+        LATAbits.LA2 = 0;   //???????
+        __delay_ms(PLUS_TIME);
+        LATAbits.LA2 = 1;
+        __delay_ms(WAIT_TIME);
         
         /*?1????????????D-0??????*/
         LATAbits.LA1 = 0;
-        LATAbits.LA4 = 1;
-        __delay_ms(5);
-        LATAbits.LA4 = 0;
-        __delay_ms(500);
+        LATAbits.LA3 = 1;
+        __delay_ms(PLUS_TIME);
+        LATAbits.LA3 = 0;
+        __delay_ms(WAIT_TIME);
+        
         
         /*?1????????????D=1??????*/
         LATAbits.LA1 = 1;
-        LATAbits.LA4 = 1;   //??????(??)
-        __delay_ms(5);
-        LATAbits.LA4 = 0;
-        __delay_ms(500);
+        LATAbits.LA3 = 1;   //??????(??)
+        __delay_ms(PLUS_TIME);
+        LATAbits.LA3 = 0;
+        __delay_ms(WAIT_TIME);
         
-        /*?2???D=0?*/
-        LATAbits.LA2 = 0;
 
-        __delay_ms(500);
-        
-        /*?2???D=1?*/
-        LATAbits.LA2 = 1;
-        LATAbits.LA4 = 1;
-        __delay_ms(5);
-        LATAbits.LA4 = 0;
-       
-        __delay_ms(500);
 }
 
-void D_ffclock(void){
-         LATAbits.LA4 = 1;  
-        __delay_ms(5);
-        LATAbits.LA4 = 0;
+
+
+void portInit(){
+    
 }

@@ -76,6 +76,7 @@ void main(void) {
     TRISA = 0x00; 
     TRISB = 0x00;
     LATA = 0b00001001;
+    //LATA = 0;
     while(1){
         dff_Check();
     }
