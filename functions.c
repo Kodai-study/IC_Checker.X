@@ -11,13 +11,12 @@
 
 
 void clock(PORT portnumber,int bitNum){
-    unsigned char clockBit = (1 << bitNum);
     switch(portnumber){
-        case A : LATA |= clockBit; __delay_ms(PLUS_TIME); LATA &= ~clockBit; break;
-        case B : LATB |= clockBit; __delay_ms(PLUS_TIME); LATB &= ~clockBit; break;
-        case C : LATC |= clockBit; __delay_ms(PLUS_TIME); LATC &= ~clockBit; break;
-        case D : LATD |= clockBit; __delay_ms(PLUS_TIME); LATD &= ~clockBit; break;
-        case E : LATE |= clockBit; __delay_ms(PLUS_TIME); LATE &= ~clockBit; break;
+        case A : LATA |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATA &= ~bitPattern[bitNum]; break;
+        case B : LATB |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATB &= ~bitPattern[bitNum]; break;
+        case C : LATC |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATC &= ~bitPattern[bitNum]; break;
+        case D : LATD |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATD &= ~bitPattern[bitNum]; break;
+        case E : LATE |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATE &= ~bitPattern[bitNum]; break;
     }
 }
 

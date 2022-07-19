@@ -13,6 +13,10 @@ typedef enum __portnumber{
     D,
     E
 }PORT;
+unsigned char bitPattern[8] = {
+    0x01, 0x02, 0x04, 0x08, 
+    0x10, 0x20 ,0x40, 0x80
+};
 
 void dff_Check(void);
 
