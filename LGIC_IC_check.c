@@ -25,9 +25,12 @@ extern unsigned char bitPattern[8];
  * 
  */
 void dff_Check(){
-        LATA = 0b00000101;  //??????????
-    /* ???????????? */
-        LATAbits.LA0 = 0;   //?????
+        LATA = 0b00000101;  //CLR.PRC?1?
+    /* ???????????????? */
+       
+        downClock(A, 2);        //?????
+       
+        LATAbits.LA0 = 0;   //?????(??)?L???
         __delay_ms(PLUS_TIME);
         LATAbits.LA0 = 1;
         __delay_ms(WAIT_TIME);
@@ -95,6 +98,8 @@ int nand_check(){
     LATC &= ~outBit;
     __delay_ms(PLUS_TIME);
     for(int i = 0;i <= 3; i++){
+        LATCbits.LATC0 = i % 2;
+        
         unsigned char data = PORTC & readBit;
         if(result[i] == 0 && data != 0){
             return -1;

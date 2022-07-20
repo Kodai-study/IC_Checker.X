@@ -22,4 +22,6 @@ unsigned char bitPattern[8] = {
 void dff_Check(void);
 
 void clock(PORT portnumber,int bitNum);
+
+void downClock(PORT portnumber,int bitNum);
 #endif	/* XC_HEADER_TEMPLATE_H */
