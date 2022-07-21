@@ -13,6 +13,9 @@
 //#define TM_OUT LATBbits.LATB0
 #define TM_OUT PORTBbits.RB0
 #define TM_SELECT LATBbits.LATB1
+#define DFF_OUT1 PORTAbits.RA0
+#define DFF_OUT2 PORTAbits.RA1
+#define D_FF_CHECK(b) if(DFF_OUT1 != b || DFF_OUT2 != b) return NG;
 
 extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—ñ
 /*
@@ -21,26 +24,33 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  * 0,1,0,1 ‚Ì‡‚É•Ï‰»‚·‚é‚±‚Æ‚ğŠm‚©‚ß‚é
  * 
  */
-void dff_Check(){
+CHECK_RESULT dff_Check(){
+        TRISA = 0x00;
         LATA = 0b00000101;  //CLR.PRC‚ğ1(off)‚É
-       
         downClock(A, 2);        //ƒvƒŠƒZƒbƒg’[q‚ğ“ü‚ê‚ÄH‚Å‰Šú‰»
-       
+        D_FF_CHECK(1)
+                
         downClock(A, 0);       //ƒNƒŠƒA’[q‚ğ0‚É
         __delay_ms(WAIT_TIME);
-        
+        D_FF_CHECK(0)
+                
         downClock(A, 2);       //ƒvƒŠƒZƒbƒg’[q‚ğ0‚É
         __delay_ms(WAIT_TIME);
-        
+        D_FF_CHECK(1)
+                
         /* D’[q‚ğ0‚É‚µ‚ÄƒNƒƒbƒN */
         LATAbits.LA1 = 0;
         clock(A, 3);
         __delay_ms(WAIT_TIME);
+        D_FF_CHECK(0)
         
         /* D’[q‚ğ1‚É‚µ‚ÄƒNƒƒbƒN */
         LATAbits.LA1 = 1;
         clock(A, 3);
         __delay_ms(WAIT_TIME);
+        D_FF_CHECK(1)
+        
+        return OK;
 }
 
 /**

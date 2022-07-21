@@ -35,7 +35,6 @@ CHECK_RESULT nand_check(int mode){
     
     for(int i = 0;i <= 3; i++){
         LATCbits.LATC0 = i % 2;
-        
         unsigned char data = PORTC & mask;
         if(result[mode][i] == 0 && data != 0){
             return NG;

@@ -68,17 +68,35 @@
 // Use project enums instead of #define for ON and OFF.
 
 #include <xc.h>
+#include <stdio.h>
 #include "fucntions.h"
+#include "lcdlib_xc8_v03.h"
 #define _XTAL_FREQ 1000000
 
-
+const char* ic_names[] = {
+    "74LS74",
+    "74LS00",
+    "74LS02",
+    "LM555",
+};
+CHECK_RESULT results[10] = {NO_CHECK};
+char st[16] = {0};
 void main(void) {
+    
+    sprintf(st,"a%s",ic_names[0]);
+    LCD_Init();
+    LCD_String("lcdÁª¯¸");
     TRISA = 0x00; 
     TRISB = 0x00;
     LATA = 0b00001001;
-    //LATA = 0;
-    while(1){
-        dff_Check();
+    results[0] = dff_Check();
+    results[1] = nand_check(0);
+    
+    for(int i = 0;i < 16;i++){
+        if(results[i] != OK){
+            LCD_String(ic_names[i]);
+        }
     }
+    
     return;
 }

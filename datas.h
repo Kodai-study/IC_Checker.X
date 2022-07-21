@@ -18,7 +18,7 @@ typedef enum __portnumber{
 }PORT;
 
 typedef enum __checkstats{
-    OK, NG, NOTFOUND
+    NO_CHECK, OK, NG, NOTFOUND
 }CHECK_RESULT;
 
 unsigned char bitPattern[8] = {
@@ -26,7 +26,8 @@ unsigned char bitPattern[8] = {
     0x10, 0x20 ,0x40, 0x80
 };
 
-void dff_Check(void);
+CHECK_RESULT dff_Check(void);
+CHECK_RESULT nand_check(int mode);
 
 void clock(PORT portnumber,int bitNum);
 void downClock(PORT portnumber,int bitNum);
