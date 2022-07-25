@@ -95,23 +95,13 @@ void main() {
     //LCD_String(st[0]);
     TRISA = 0x00;
     LATA = 0b10101010;
-
+    LCD_Number(TMchecker() == OK);
+    viewResults();
     results[2] = NG;
     results[3] = NG;
     results[1] = NG;
-    for(int i = 0;i < 10;i++){
-        if(results[i] != OK){
-            switch(ng_count){
-                case 0 : LCD_String(ic_names[i]);
-                    LCD_String("\n"); break;
-                case 1 : LCD_String(ic_names[i]); break;
-                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;
-                default : break;
-            }
-            ng_count++;
-        }
-    }
-    while(1){;}
+
+    while(1){ __delay_ms(100); }
     
        /**  ŽÀ‘•—\’è‚ÌƒR[ƒh
     *  TRISA = 0x00; 
@@ -136,6 +126,18 @@ void main() {
         LED_GREEN = 0;
         LED_BLUE = 1;
         LED_RED = 1;
+    }
+       /*for(int i = 0;i < 10;i++){
+        if(results[i] != OK){
+            switch(ng_count){
+                case 0 : LCD_String(ic_names[i]);
+                    LCD_String("\n"); break;
+                case 1 : LCD_String(ic_names[i]); break;
+                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;
+                default : break;
+            }
+            ng_count++;
+        }
     }
     */
     

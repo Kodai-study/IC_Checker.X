@@ -9,10 +9,9 @@
 #include <xc.h>
 #include "datas.h"
 #include "fucntions.h"
+#include "lcdlib_xc8_v03.h"
 
-//#define TM_OUT LATBbits.LATB0
-#define TM_OUT PORTBbits.RB0
-#define TM_SELECT LATBbits.LATB1
+
 
 #define DFF_Q1 PORTAbits.RA0
 #define DFF_nQ1 PORTAbits.RA1
@@ -40,7 +39,7 @@ CHECK_RESULT dff_Check(){
         downClock(A, 2);        //プリセット端子を入れてHで初期化
         DFF_CHECK(1)
         CLOCK(DFF_CLR)
-                
+        
         downClock(A, 0);       //クリア端子を0に
         __delay_ms(WAIT_TIME);
         DFF_CHECK(0)
@@ -66,48 +65,3 @@ CHECK_RESULT dff_Check(){
         return OK;
 }
 
-/**
- * 
- * LM555 タイマICのチェック
- * 抵抗値を切り替えて、次の周波数、デューティー比を確認
- * 100kΩ : 12.02Hz, 91.6%
- * 9.1kΩ : 49.58Hz、65.6%
- * 
- */
-CHECK_RESULT TMchecker(){
-    /* 出力が1に切り替わった瞬間から測定を開始。それまで待つ */
-    int old = TM_OUT;
-    int new = old;
-    const int cycle = (int)(1000.0 / 12.025);   //12.25Hzの時の周期(ms)
-    while(old != (new = TM_OUT) && old == 0){
-        if(old != new){
-            old = new;
-        }
-        __delay_ms(1);
-    }
-    
-    int onCount;    //出力が0nだった回数=時間(ms)をカウント
-    int offCount;   
-    /* 4周期周波数とデューティー比を測る */
-    for(int i = 0,onCount = 0,offCount = 0;i < 4;i++){
-        while(TM_OUT != 0){
-            onCount++;
-            __delay_ms(1);
-        }
-        while(TM_OUT == 0){
-            offCount++;
-            __delay_ms(1);
-        }
-        int cycleCount = onCount + offCount;    //1周期の時間(ms)
-        
-        /* 周期、デューティー比が既定の±5%以上離れていたら失敗とする */
-        if(cycleCount <= (int)(cycle * 1.05) ||
-           cycleCount >= (int)(cycle * 0.95) || //周期が理論値±5%
-           (double)onCount / cycleCount >= 0.85 ||  //オン時間が±5%
-           (double)onCount / cycleCount <= 0.95 ||
-           (double)offCount / cycleCount >= 0.05 || //オフ時間が±5%
-           (double)offCount / cycleCount >= 0.15)
-            return NG;
-    }
-    return OK;  //4周期測定して、周波数とデューティー比が範囲内ならOK
-}

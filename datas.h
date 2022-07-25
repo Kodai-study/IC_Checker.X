@@ -31,4 +31,6 @@ CHECK_RESULT nand_check(int mode);
 
 void clock(PORT portnumber,int bitNum);
 void downClock(PORT portnumber,int bitNum);
+CHECK_RESULT TMchecker();
+void viewResults();
 #endif	/* XC_HEADER_TEMPLATE_H */
