@@ -79,23 +79,46 @@
 
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
-    "74LS74",
-    "74LS00",
-    "74LS02",
-    "LM555",
+    " 74LS74 ",
+    " 74LS00 ",
+    " 74LS02 ",
+    " LM555 ",
 };
-CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
+//CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
+CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 char st[2][17] = {0};                   //LCDに表示する文字列
 int ng_count = 0;                       //チェックが失敗した項目の数をカウント
-void main(void) {
+void main() {
     
-    sprintf(st[0],"ICcheck %s",ic_names[0]);
+    //sprintf(st[0],"IC_%s",ic_names[0]);
     LCD_Init();
-    LCD_String(st[0]);
-    TRISA = 0x00; 
+    //LCD_String(st[0]);
+    TRISA = 0x00;
+    LATA = 0b10101010;
+
+    results[2] = NG;
+    results[3] = NG;
+    results[1] = NG;
+    for(int i = 0;i < 10;i++){
+        if(results[i] != OK){
+            switch(ng_count){
+                case 0 : LCD_String(ic_names[i]);
+                    LCD_String("\n"); break;
+                case 1 : LCD_String(ic_names[i]); break;
+                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;
+                default : break;
+            }
+            ng_count++;
+        }
+    }
+    while(1){;}
+    
+       /**  実装予定のコード
+    *  TRISA = 0x00; 
     TRISB = 0x00;
     LATA = 0b00001001;    
     
+    ///　測定中は黄色に点灯
     LED_RED = 0;
     LED_GREEN = 0;
     LED_BLUE = 1;
@@ -103,22 +126,21 @@ void main(void) {
     results[0] = dff_Check();
     results[1] = nand_check(0);
     
-    for(int i = 0;i < 16;i++){
-        if(results[i] != OK){
-            LCD_String(ic_names[i]);
-            ng_count++;
-        }
-    }
-    
+
+    ///　エラー項目があれば赤色に点灯
     if(ng_count > 0){
         LED_RED = 0;
         LED_BLUE = 1;
         LED_GREEN = 1;
-    } else {
+    } else {        ///OKならば緑色に点灯
         LED_GREEN = 0;
         LED_BLUE = 1;
         LED_RED = 1;
     }
+    */
     
     return;
 }
+
+
+

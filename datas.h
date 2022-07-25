@@ -5,7 +5,7 @@
 #define PLUS_TIME 5
 #define WAIT_TIME 500
 #define _XTAL_FREQ 1000000
-#define CLOCK(x) {(x) = 0; __delay_ms(PLUS_TIME); (x) = 1;}
+//#define CLOCK(x) {(x) = 0; __delay_ms(PLUS_TIME); (x) = 1;}
 #define LAT(sym,num) LAT##sym ##bits.L ##sym ##num 
 #define PORT(sym,num) PORT##sym ##bits.R ##sym ##num 
 #define TRIS(sym,num) TRIS##sym ##bits.TRIS ##sym ##num 
