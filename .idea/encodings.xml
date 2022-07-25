@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="Shift_JIS">
+    <file url="file://$PROJECT_DIR$/LGIC_IC_check.c" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/fucntions.h" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/functions.c" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/lcdlib_xc8_v03.c" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/lcdlib_xc8_v03.h" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/nand_nor_check.c" charset="Shift_JIS" />
+    <file url="file://$PROJECT_DIR$/op_comp.c" charset="Shift_JIS" />
+  </component>
+</project>

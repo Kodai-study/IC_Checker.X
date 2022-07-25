@@ -22,7 +22,7 @@
 //
 //                        Copyright(C) Yasuharu Yajima 2007
 //*****************************************************************************
-
+#define _XTAL_FREQ 1000000
 #ifndef _LCDLIB_XC8_V02_H
 #define _LCDLIB_XC8_V02_H
 

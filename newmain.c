@@ -73,29 +73,51 @@
 #include "lcdlib_xc8_v03.h"
 #define _XTAL_FREQ 1000000
 
-const char* ic_names[] = {
+#define LED_BLUE LATAbits.LA0
+#define LED_RED LATAbits.LA1
+#define LED_GREEN LATAbits.LA2
+
+
+const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     "74LS74",
     "74LS00",
     "74LS02",
     "LM555",
 };
-CHECK_RESULT results[10] = {NO_CHECK};
-char st[16] = {0};
+CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
+char st[2][17] = {0};                   //LCDに表示する文字列
+int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 void main(void) {
     
-    sprintf(st,"a%s",ic_names[0]);
+    sprintf(st[0],"ICcheck %s",ic_names[0]);
     LCD_Init();
-    LCD_String("lcdﾁｪｯｸ");
+    LCD_String(st[0]);
     TRISA = 0x00; 
     TRISB = 0x00;
-    LATA = 0b00001001;
+    LATA = 0b00001001;    
+    
+    LED_RED = 0;
+    LED_GREEN = 0;
+    LED_BLUE = 1;
+    
     results[0] = dff_Check();
     results[1] = nand_check(0);
     
     for(int i = 0;i < 16;i++){
         if(results[i] != OK){
             LCD_String(ic_names[i]);
+            ng_count++;
         }
+    }
+    
+    if(ng_count > 0){
+        LED_RED = 0;
+        LED_BLUE = 1;
+        LED_GREEN = 1;
+    } else {
+        LED_GREEN = 0;
+        LED_BLUE = 1;
+        LED_RED = 1;
     }
     
     return;
