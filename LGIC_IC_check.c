@@ -11,37 +11,31 @@
 #include "fucntions.h"
 #include "lcdlib_xc8_v03.h"
 
-#define HOGE (A,2)
+#define Q_PORT PORTA
+#define Q_LAT  LATA
+#define Q_TRIS TRISA
 
-#define DFF_Q1 PORTAbits.RA0
-#define DFF_nQ1 PORTAbits.RA1
-#define DFF_Q2 PORTAbits.RA2
-#define DFF_nQ2 PORTAbits.RA3
+/* 74393‚Ìo—ÍQ0?3‚ğ0?3”Ôƒ|[ƒg‚ÉA2‚Â–Ú‚ÌQ0?3‚ğ4?8”Ôƒ|[ƒg‚ÉÚ‘± */
+
+#define DFF_CL1 LAT(A,0)
+#define DFF_PR1 LAT(A,1)
+#define DFF_Q1  P(A,2)
+#define DFF_nQ1 P(A,3)
+#define DFF_CL2 LAT(A,4)
+#define DFF_PR2 LAT(A,5)
+#define DFF_Q2  P(A,6)
+#define DFF_nQ2 P(A,7)
+
 #define DFF_COMD LATAbits.LA4
 #define DFF_COMCLR LATAbits.LA6
 
-#define CO1_Q2 DFF_Q1
-#define CO1_Q3 DFF_nQ1
-#define CO2_Q2 DFF_Q2
-#define CO2_Q3 DFF_nQ2
+
+
 #define CO_CLR DFF_COMD
 #define CO_CLK DFF_COMCLR
 
-
-#define DFF_CL1 LAT(A,3)
-#define DFF_PR1 LAT(A,4)
-#define DFF_CL2 LAT(A,5)
-#define DFF_PR2 LAT(A,6)
-
-#define CO1_Q0 PORT(A,3)
-#define CO1_Q1 PORT(A,3)
-#define CO2_Q0 PORT(A,3)
-#define CO2_Q1 PORT(A,3)
-
-
 #define DFF_CHECK(b) \
-    if(DFF_Q1 != b || DFF_nQ1 != (!b) || DFF_Q2 != b || DFF_nQ2 != (!b))  return NG;
-
+    if(DFF_Q1 != b || DFF_nQ1 != (!b) || DFF_Q2 != b || DFF_nQ2 != (!b))  {return NG;}
 
 extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—ñ
 /*
@@ -52,10 +46,13 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  */
 CHECK_RESULT dff_Check(){
         TRISA = 0x00;
-        LATA = 0b00000101;  //CLR.PRC‚ğ1(off)‚É
-        downClock(A, 2);        //ƒvƒŠƒZƒbƒg’[q‚ğ“ü‚ê‚ÄH‚Å‰Šú‰»
+        LATA = 0x00;  //CLR.PRC‚ğ1(off)‚É
+        DFF_PR1 = 1;
+        DFF_PR2 = 1;
+        DFF_COMCLR = 1;
+        DOWN_CLOCK(DFF_PR1);        //ƒvƒŠƒZƒbƒg’[q‚ğ“ü‚ê‚ÄH‚Å‰Šú‰»
+        DOWN_CLOCK(DFF_PR2);
         DFF_CHECK(1)
-        CLOCK(DFF_COMCLR);
         
         downClock(A, 0);       //ƒNƒŠƒA’[q‚ğ0‚É
         __delay_ms(WAIT_TIME);
@@ -82,10 +79,26 @@ CHECK_RESULT dff_Check(){
 
 
 CHECK_RESULT count_check(){
-    
+    CLOCK(CO_CLR)
+    for(int i = 0;i < 15;i++){
+        if(num_check(i) == 0){
+            return NG;
+        }
+        CLOCK(CO_CLK)
+    }
+    if(num_check(0) != 0){
+        return OK;
+    }
 }
 
-int num_check(){
-    int num;
+int num_check(int value){
     
+    if(value != (Q_PORT & 0x0f)){
+        return 0;
+    }
+    if(value != (Q_PORT & 0xf0) >> 4){
+        return 0;
+    }
+    
+    return 1;
 }
