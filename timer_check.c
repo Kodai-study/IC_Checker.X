@@ -47,28 +47,30 @@ CHECK_RESULT TMchecker(){
     }
 
     /* 4周期周波数とデューティー比を測る */
-    for(int i = 0;i < 4;i++){
+    for(int i = 0;i < 10;i++){
         onCount = 0;
         offCount = 0;
         while(TM_OUT != 0){
             onCount++;
+            LATAbits.LA0 = 1;
             __delay_ms(1);
         }
         while(PORTBbits.RB1 == 0){
             offCount++;
+            LATAbits.LA0 = 0;
             __delay_ms(1);
         }
         cycleCount = onCount + offCount;    //1周期の時間(ms)
         
         // 周期、デューティー比が既定の±5%以上離れていたら失敗とする 
-        if(cycleCount >= (int)(cycle * 1.05) ||
+       /* if(cycleCount >= (int)(cycle * 1.05) ||
            cycleCount <= (int)(cycle * 0.95) || //周期が理論値±5%
            (double)onCount / cycleCount <= 0.85 ||  //オン時間が±5%
            (double)onCount / cycleCount >= 0.95 ||
            (double)offCount / cycleCount <= 0.05 || //オフ時間が±5%
            (double)offCount / cycleCount >= 0.15)
             return NG;
-
+*/
     }
     return OK;  //4周期測定して、周波数とデューティー比が範囲内ならOK
 }

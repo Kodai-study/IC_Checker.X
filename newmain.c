@@ -9,8 +9,13 @@
 
 // 'C' source line config statements
 
+
+// PIC18F4620 Configuration Bit Settings
+
+// 'C' source line config statements
+
 // CONFIG1H
-#pragma config OSC = INTIO7     // Oscillator Selection bits (Internal oscillator block, CLKOUT function on RA6, port function on RA7)
+#pragma config OSC = INTIO67     // Oscillator Selection bits (Internal oscillator block, CLKOUT function on RA6, port function on RA7)
 #pragma config FCMEN = OFF      // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
 #pragma config IESO = OFF       // Internal/External Oscillator Switchover bit (Oscillator Switchover mode disabled)
 
@@ -71,7 +76,8 @@
 #include <stdio.h>
 #include "fucntions.h"
 #include "lcdlib_xc8_v03.h"
-#define _XTAL_FREQ 1000000
+#include "datas.h"
+
 
 #define LED_BLUE LATAbits.LA0
 #define LED_RED LATAbits.LA1
@@ -89,19 +95,33 @@ CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 char st[2][17] = {0};                   //LCDに表示する文字列
 int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 void main() {
-    
     //sprintf(st[0],"IC_%s",ic_names[0]);
-    LCD_Init();
+    
+    OSCCON = 0b01100000;
     //LCD_String(st[0]);
     TRISA = 0x00;
+    TRISB = 0x00;
     LATA = 0b10101010;
-    LCD_Number(TMchecker() == OK);
-    viewResults();
+    ADCON1 = 0x0f;
+    //TMchecker();
+    //viewResults();
     results[2] = NG;
     results[3] = NG;
     results[1] = NG;
-
-    while(1){ __delay_ms(100); }
+    LATBbits.LATB0 = 1;
+    LCD_Init();
+    while(1){
+        
+        if(count_check() == OK){
+            LATBbits.LATB3 = 1;
+            LCD_String("OK");
+            
+        } else{
+            LATBbits.LATB3 = 0;
+            LCD_String("NG");
+        }
+        __delay_ms(1000);
+    }
     
        /**  実装予定のコード
     *  TRISA = 0x00; 

@@ -26,8 +26,8 @@
 #define DFF_Q2  P(A,6)
 #define DFF_nQ2 P(A,7)
 
-#define DFF_COMD LATAbits.LA4
-#define DFF_COMCLR LATAbits.LA6
+#define DFF_COMD LATBbits.LATB0
+#define DFF_COMCLR LATBbits.LATB1
 
 
 
@@ -45,32 +45,46 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  * 
  */
 CHECK_RESULT dff_Check(){
-        TRISA = 0x00;
-        LATA = 0x00;  //CLR.PRC‚ğ1(off)‚É
+        LCD_Clear();
+        
+        Q_TRIS = 0b11001100;
+        LATB = 0;
+        Q_LAT = 0x00;  //CLR.PRC‚ğ1(off)‚É
         DFF_PR1 = 1;
         DFF_PR2 = 1;
         DFF_COMCLR = 1;
         DOWN_CLOCK(DFF_PR1);        //ƒvƒŠƒZƒbƒg’[q‚ğ“ü‚ê‚ÄH‚Å‰Šú‰»
         DOWN_CLOCK(DFF_PR2);
+        
+        LCD_Number(0);
         DFF_CHECK(1)
         
-        downClock(A, 0);       //ƒNƒŠƒA’[q‚ğ0‚É
+        DOWN_CLOCK(DFF_COMCLR);       //ƒNƒŠƒA’[q‚ğ0‚É
         __delay_ms(WAIT_TIME);
+        LCD_Number(1);
         DFF_CHECK(0)
                 
-        downClock(A, 2);       //ƒvƒŠƒZƒbƒg’[q‚ğ0‚É
+        DOWN_CLOCK(DFF_PR1);       //ƒvƒŠƒZƒbƒg’[q‚ğ0‚É
+        DOWN_CLOCK(DFF_PR2);
+        LCD_Number(2);
         __delay_ms(WAIT_TIME);
         DFF_CHECK(1)
                 
         /* D’[q‚ğ0‚É‚µ‚ÄƒNƒƒbƒN */
         DFF_COMD = 0;
-        clock(A, 3);
+        __delay_ms(WAIT_TIME);
+        CLOCK(DFF_CL1)
+        CLOCK(DFF_CL2)
+        LCD_Number(3);
         __delay_ms(WAIT_TIME);
         DFF_CHECK(0)
         
         /* D’[q‚ğ1‚É‚µ‚ÄƒNƒƒbƒN */
         DFF_COMD = 1;
-        clock(A, 3);
+        __delay_ms(WAIT_TIME);
+        CLOCK(DFF_CL1);
+        CLOCK(DFF_CL2);
+        LCD_Number(4);
         __delay_ms(WAIT_TIME);
         DFF_CHECK(1)
         
@@ -79,6 +93,11 @@ CHECK_RESULT dff_Check(){
 
 
 CHECK_RESULT count_check(){
+    LCD_Clear();
+        
+    Q_TRIS = 0xff;
+    TRISB = 0x00;
+    LATB = 0;
     CLOCK(CO_CLR)
     for(int i = 0;i < 15;i++){
         if(num_check(i) == 0){
@@ -86,19 +105,21 @@ CHECK_RESULT count_check(){
         }
         CLOCK(CO_CLK)
     }
+    CLOCK(CO_CLK)
     if(num_check(0) != 0){
         return OK;
     }
 }
 
 int num_check(int value){
-    
+    LCD_Clear();
     if(value != (Q_PORT & 0x0f)){
         return 0;
-    }
+    } 
     if(value != (Q_PORT & 0xf0) >> 4){
         return 0;
     }
-    
+    LCD_Number(Q_PORT);
+    __delay_ms(500);
     return 1;
 }

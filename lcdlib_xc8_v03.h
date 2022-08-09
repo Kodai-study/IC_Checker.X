@@ -22,22 +22,22 @@
 //
 //                        Copyright(C) Yasuharu Yajima 2007
 //*****************************************************************************
-#define _XTAL_FREQ 1000000
+//#define PORT_CHANGE
 #ifndef _LCDLIB_XC8_V02_H
 #define _LCDLIB_XC8_V02_H
 
 /*PICÇÃOSCÇ…çáÇÌÇπÇƒïœçXÇ∑ÇÈ*/
 #ifndef	_XTAL_FREQ
-#define _XTAL_FREQ 40000000UL
+#define _XTAL_FREQ 4000000UL
 #endif
 
-#ifdef __18F6722
-#define LCD_DATA_PORT	PORTF			//D :Data bus line RF7Å`RF4(4bits)
-#define	LCD_DATA_LAT	LATF			//D :Data bus line output
-#define	TRIS_DB4	TRISFbits.TRISF4	//DB4 :Data bit4 RF4
-#define	TRIS_DB5	TRISFbits.TRISF5	//DB5 :Data bit5 RF5
-#define	TRIS_DB6	TRISFbits.TRISF6	//DB6 :Data bit6 RF6
-#define	TRIS_DB7	TRISFbits.TRISF7	//DB7 :Data bit7 RF7
+#ifdef PORT_CHANGE
+#define LCD_DATA_PORT	PORTA			//D :Data bus line RF7Å`RF4(4bits)
+#define	LCD_DATA_LAT	LATA			//D :Data bus line output
+#define	TRIS_DB4	TRISAbits.TRISA4	//DB4 :Data bit4 RF4
+#define	TRIS_DB5	TRISAbits.TRISA5	//DB5 :Data bit5 RF5
+#define	TRIS_DB6	TRISAbits.TRISA6	//DB6 :Data bit6 RF6
+#define	TRIS_DB7	TRISAbits.TRISA7	//DB7 :Data bit7 RF7
 
 #else
 #define	LCD_DATA_PORT	PORTD			//D :Data bus line RD7Å`RD4(4bits)
