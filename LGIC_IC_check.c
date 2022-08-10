@@ -46,7 +46,6 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  */
 CHECK_RESULT dff_Check(){
         LCD_Clear();
-        
         Q_TRIS = 0b11001100;
         LATB = 0;
         Q_LAT = 0x00;  //CLR.PRC‚ğ1(off)‚É
@@ -99,13 +98,12 @@ CHECK_RESULT count_check(){
     TRISB = 0x00;
     LATB = 0;
     CLOCK(CO_CLR)
-    for(int i = 0;i < 15;i++){
+    for(int i = 0;i < 16;i++){
         if(num_check(i) == 0){
             return NG;
         }
         CLOCK(CO_CLK)
     }
-    CLOCK(CO_CLK)
     if(num_check(0) != 0){
         return OK;
     }

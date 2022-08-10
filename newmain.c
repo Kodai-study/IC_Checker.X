@@ -98,6 +98,9 @@ void main() {
     //sprintf(st[0],"IC_%s",ic_names[0]);
     
     OSCCON = 0b01100000;
+    RCONbits.IPEN = 0;
+    INTCONbits.GIE = 1;
+    INTCONbits.PEIE = 1;
     //LCD_String(st[0]);
     TRISA = 0x00;
     TRISB = 0x00;
@@ -110,16 +113,18 @@ void main() {
     results[1] = NG;
     LATBbits.LATB0 = 1;
     LCD_Init();
+    usart_init();
+    LCD_String("start\n");
     while(1){
         
-        if(count_check() == OK){
+       /* if(count_check() == OK){
             LATBbits.LATB3 = 1;
             LCD_String("OK");
             
         } else{
             LATBbits.LATB3 = 0;
             LCD_String("NG");
-        }
+        }*/
         __delay_ms(1000);
     }
     
@@ -165,4 +170,14 @@ void main() {
 }
 
 
-
+void __interrupt ( ) isr (void){
+    if(PIR1bits.RCIF != 0){
+        PIR1bits.RCIF = 0;
+        LCD_Number(RCREG);
+    } else if(PIR1bits.TXIF != 0){
+        
+    }
+    //PIE2bits.CMIE; = 
+    //CMCONbits.C1OUT;
+    //CMCONbits.C2OUT;
+}

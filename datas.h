@@ -36,4 +36,5 @@ void clock(PORT portnumber,int bitNum);
 void downClock(PORT portnumber,int bitNum);
 CHECK_RESULT TMchecker();
 void viewResults();
+void usart_init();
 #endif	/* XC_HEADER_TEMPLATE_H */
