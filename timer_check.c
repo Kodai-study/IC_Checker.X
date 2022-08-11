@@ -9,11 +9,12 @@
 #include <xc.h>
 #include <stdio.h>
 #include "datas.h"
-#include "lcdlib_xc8_v03.h"
 
 #define TM_OUT PORTBbits.RB1
 #define TM_OUT_TRIS TRISBbits.RB0
 #define TM_SELECT LATBbits.LATB1
+
+
 /**
  * 
  * LM555 タイマICのチェック
@@ -34,15 +35,15 @@ CHECK_RESULT TMchecker(){
     TM_OUT_TRIS = 1;    
     TRISB = 0xff;
     __delay_ms(100);
-    LCD_Number(TM_OUT);
+    LCD_Number(t0_flg);
     LCD_String("ﾀｲﾏｶｲｼ\n");
     /* 出力が1に切り替わった瞬間から測定を開始。それまで待つ */
     int old = TM_OUT;
     int new = old;
-
+    
     while((new = TM_OUT) && old == 0){
         old = new;
-        __delay_ms(1);
+        T0_WAIT
     }
 
     /* 4周期周波数とデューティー比を測る */
@@ -52,12 +53,14 @@ CHECK_RESULT TMchecker(){
         while(TM_OUT != 0){
             onCount++;
             LATAbits.LA0 = 1;
-            __delay_ms(1);
+            T0_WAIT
+            //__delay_ms(1);
         }
         while(TM_OUT == 0){
             offCount++;
             LATAbits.LA0 = 0;
-            __delay_ms(1);
+            T0_WAIT
+           // __delay_ms(1);
         }
         cycleCount = onCount + offCount;    //1周期の時間(ms)
         

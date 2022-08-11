@@ -75,7 +75,6 @@
 #include <xc.h>
 #include <stdio.h>
 #include "fucntions.h"
-#include "lcdlib_xc8_v03.h"
 #include "datas.h"
 
 #define POWER_SW LATBbits.LATB0     //チェック項目へ流す電源を接続するスイッチ
@@ -85,15 +84,31 @@
 #define LED_GREEN LATAbits.LA2
 
 _Bool stop = 0;
-_Bool t0_flg = 0;
+_Bool t0_flg = 0;   //1msごと、タイマ0の割り込みが起きたときに1になるフラグ
+_Bool sw1_flg = 0;  //スイッチ1が押された時に1になる
+_Bool sw2_flg = 0;  //スイッチ2が押されたときに1になる
 int hoge_count = 0;
+char rx_buf = 0;    //USARTで受け取った値を保存
+int mode = 1;       
+static const char dot = 0b10100101;     //LCDで、選択項目を表すドットのデータ
+static const char blank = 0b10100000;   //LCDで、空白を表示させるデータ
+static const char allow = 0x7e;         //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     " 74LS74 ",
     " 74LS00 ",
     " 74LS02 ",
     " LM555 ",
+    " 74LS393",
+    " 74LS195"
 };
+const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
+
+const char* mode_names[] = {    //チェックするモードを表示する文字列
+    " ALLﾁｪｯｸ",
+    " ﾀﾝﾀｲﾁｪｯｸ"
+};
+
 //CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
 CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 char st[2][17] = {0};                   //LCDに表示する文字列
@@ -183,17 +198,106 @@ void main() {
     return;
 }
 
+/* 単体チェックか、全てをチェックするかを選択する */
+void menu_mode(){
+    LCD_Clear();        
+    static int cur = 0;     //選択モードがどちらかを格納
+    SW1_TRIS = 1;           
+    SW2_TRIS = 1;
+    
+    /* 初期は全てチェックモード */
+    LCD_Character(dot);         
+    LCD_String(mode_names[0]);
+    LCD_Character('\n');
+    LCD_String(mode_names[1]);
+    
+    while(1){
+        T0_WAIT
+        sw_check();     //1msごとに、スイッチが押されたかどうかチェック
+        /* スイッチ1が押されたら、選択モードを変更 */
+        if(sw1_flg != 0){       
+            sw1_flg = 0;
+            LCD_Locate(cur,0);
+            LCD_Character(blank);
+            cur = !cur;
+            LCD_Locate(cur,0);
+            LCD_Character(dot);
+        }
+        /* スイッチ2が押されたら、選択されたモードに移行 */
+        if(sw2_flg != 0){
+            sw2_flg = 0;
+            mode = (cur == 0) ? 1 : 2;
+            return;
+        }
+    }
+}
+
+/* 単体チェックモードで、チェックする項目を決める */
+void select_check(){
+    LCD_Clear();
+    static int cur = 0;
+    /* 最初の0,1個めを表示する */
+    LCD_Character(dot);
+    LCD_String(ic_names[cur]);
+    LCD_String("\n ");
+    LCD_String(ic_names[cur + 1]);
+    LCD_Locate(1,15);
+    LCD_Character(allow); 
+    while(1){
+        T0_WAIT
+        sw_check();
+        if(sw1_flg != 0){
+            LCD_Clear();
+            sw1_flg = 0;
+            cur++;
+            
+            /* 項目を1つずらして表示 */
+            if(cur < ic_kinds - 1){
+                LCD_Character(dot);
+                LCD_String(ic_names[cur]);
+                LCD_Character('\n');
+                LCD_String(ic_names[cur + 1]);
+                if(cur < ic_kinds - 2){
+                    LCD_Locate(1,15);
+                    LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
+                }
+            } else if(cur < ic_kinds){
+                LCD_String(ic_names[cur - 1]);
+                LCD_Character('\n');
+                LCD_Character(dot);
+                LCD_String(ic_names[cur]);
+            } else {
+                cur = 0;
+                LCD_Character(dot);
+                LCD_String(ic_names[0]);
+                LCD_String("\n ");
+                LCD_String(ic_names[1]);
+                LCD_Locate(1,15);
+                LCD_Character(allow); 
+            }
+        }
+        
+        if(sw2_flg != 0){
+            single_check(cur);
+            return;
+        }
+        
+    }
+}
 
 void __interrupt ( ) isr (void){
     if(PIR2bits.CMIF != 0){ //コンパレータの出力が変化した割り込み。
         PIR2bits.CMIF = 0;
         if(CMCONbits.C1OUT != 0){       //C1の出力が基準電圧を超えた→過電流
             POWER_SW = 0;               //電源を停止
-            stop = 1;                   //
+            current_over();
+            stop = 1;                  
         }
     }
+    /* USARTで値を受け取ったとき */
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
+        rx_buf = RCREG;
         LCD_Number(RCREG);
     } else if(PIR1bits.TXIF != 0){
         

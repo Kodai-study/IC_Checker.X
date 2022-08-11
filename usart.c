@@ -18,7 +18,14 @@ void usart_init(){
     PIE1bits.RCIE = 1;
 }
 
-void hoge(){
+void req_check(int kind){
     
+    TXREG = 0x01;
+    while(1){;}
+    
+    
+}
+
+void echo(){
     
 }

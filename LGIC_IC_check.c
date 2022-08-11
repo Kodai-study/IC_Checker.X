@@ -95,6 +95,7 @@ CHECK_RESULT dff_Check(){
         return OK;
 }
 
+int num_check(int value);
 
 CHECK_RESULT count_check(){
     LCD_Clear();
