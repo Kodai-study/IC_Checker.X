@@ -30,3 +30,5 @@ void downClock(PORT portnumber,int bitNum){
         case E : LATE &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATE |= bitPattern[bitNum]; break;
     }
 }
+
+

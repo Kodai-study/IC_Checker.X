@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include "datas.h"
 #include "lcdlib_xc8_v03.h"
-//#define TM_OUT LATBbits.LATB0
+
 #define TM_OUT PORTBbits.RB1
 #define TM_OUT_TRIS TRISBbits.RB0
 #define TM_SELECT LATBbits.LATB1
@@ -29,8 +29,9 @@ const int cycle = (int)(1000.0 / 12.025);   //12.25Hzの時の周期(ms)
 int cycleCount = 0;
 
 CHECK_RESULT TMchecker(){
+    
     ADCON1 = 0xff;
-    TM_OUT_TRIS = 1;
+    TM_OUT_TRIS = 1;    
     TRISB = 0xff;
     __delay_ms(100);
     LCD_Number(TM_OUT);
@@ -39,15 +40,13 @@ CHECK_RESULT TMchecker(){
     int old = TM_OUT;
     int new = old;
 
-    while(old != (new = TM_OUT) && old == 0){
-        if(old != new){
-            old = new;
-        }
+    while((new = TM_OUT) && old == 0){
+        old = new;
         __delay_ms(1);
     }
 
     /* 4周期周波数とデューティー比を測る */
-    for(int i = 0;i < 10;i++){
+    for(int i = 0;i < 4;i++){
         onCount = 0;
         offCount = 0;
         while(TM_OUT != 0){
@@ -55,7 +54,7 @@ CHECK_RESULT TMchecker(){
             LATAbits.LA0 = 1;
             __delay_ms(1);
         }
-        while(PORTBbits.RB1 == 0){
+        while(TM_OUT == 0){
             offCount++;
             LATAbits.LA0 = 0;
             __delay_ms(1);

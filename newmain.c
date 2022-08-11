@@ -78,11 +78,15 @@
 #include "lcdlib_xc8_v03.h"
 #include "datas.h"
 
-
+#define POWER_SW LATBbits.LATB0     //チェック項目へ流す電源を接続するスイッチ
+#define SW_TRIS  TRISBbits.TRISB0   //電源制御リレー
 #define LED_BLUE LATAbits.LA0
 #define LED_RED LATAbits.LA1
 #define LED_GREEN LATAbits.LA2
 
+_Bool stop = 0;
+_Bool t0_flg = 0;
+int hoge_count = 0;
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     " 74LS74 ",
@@ -97,24 +101,30 @@ int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 void main() {
     //sprintf(st[0],"IC_%s",ic_names[0]);
     
-    OSCCON = 0b01100000;
+    OSCCON = 0b01100000;    //クロックを4MHzに設定
+    /* 優先度なしで、割り込みを許可 */
     RCONbits.IPEN = 0;
     INTCONbits.GIE = 1;
     INTCONbits.PEIE = 1;
-    //LCD_String(st[0]);
+    
+    SW_TRIS = 0;
     TRISA = 0x00;
     TRISB = 0x00;
     LATA = 0b10101010;
-    ADCON1 = 0x0f;
-    //TMchecker();
-    //viewResults();
-    results[2] = NG;
-    results[3] = NG;
-    results[1] = NG;
+    ADCON1 = 0x0f;      //全てディジタルピンに設定
+    
     LATBbits.LATB0 = 1;
     LCD_Init();
     usart_init();
     LCD_String("start\n");
+    POWER_SW = 1;
+    
+    /* 1msごとのタイマ割り込みを設定 */
+    T0CON = 0b10000001;
+    TMR0H = (64534 >> 8);
+    TMR0L = (64534 & 0xff);
+    INTCONbits.T0IE = 1;
+    
     while(1){
         
        /* if(count_check() == OK){
@@ -141,6 +151,9 @@ void main() {
     results[0] = dff_Check();
     results[1] = nand_check(0);
     
+    results[2] = NG;
+    results[3] = NG;
+    results[1] = NG;
 
     ///　エラー項目があれば赤色に点灯
     if(ng_count > 0){
@@ -152,13 +165,14 @@ void main() {
         LED_BLUE = 1;
         LED_RED = 1;
     }
-       /*for(int i = 0;i < 10;i++){
+        NGの数を数えて、NG項目をLCDに表示する。
+    for(int i = 0;i < 10;i++){
         if(results[i] != OK){
             switch(ng_count){
                 case 0 : LCD_String(ic_names[i]);
                     LCD_String("\n"); break;
                 case 1 : LCD_String(ic_names[i]); break;
-                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;
+                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;  //NG項目が3つ以上の時は、矢印を出してスクロールさせる
                 default : break;
             }
             ng_count++;
@@ -171,13 +185,24 @@ void main() {
 
 
 void __interrupt ( ) isr (void){
+    if(PIR2bits.CMIF != 0){ //コンパレータの出力が変化した割り込み。
+        PIR2bits.CMIF = 0;
+        if(CMCONbits.C1OUT != 0){       //C1の出力が基準電圧を超えた→過電流
+            POWER_SW = 0;               //電源を停止
+            stop = 1;                   //
+        }
+    }
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
         LCD_Number(RCREG);
     } else if(PIR1bits.TXIF != 0){
         
     }
-    //PIE2bits.CMIE; = 
-    //CMCONbits.C1OUT;
-    //CMCONbits.C2OUT;
+    /* タイマ0割り込み(1ms)が起きたとき */
+    if(INTCONbits.TMR0IF != 0){
+       INTCONbits.TMR0IF = 0;
+        TMR0H = (64534 >> 8);
+        TMR0L = (64534 & 0xff);
+        t0_flg = 1;
+    }
 }

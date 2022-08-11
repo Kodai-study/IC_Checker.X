@@ -28,11 +28,14 @@
 
 #define DFF_COMD LATBbits.LATB0
 #define DFF_COMCLR LATBbits.LATB1
-
+#define COMD_TRIS TRISBbits.TRISB0
+#define COMCLR_TRIS TRISBbits.TRISB1
 
 
 #define CO_CLR DFF_COMD
 #define CO_CLK DFF_COMCLR
+#define CO_CLR_TRIS COMD_TRIS
+#define CO_CLK_TRIS COMCLR_TRIS
 
 #define DFF_CHECK(b) \
     if(DFF_Q1 != b || DFF_nQ1 != (!b) || DFF_Q2 != b || DFF_nQ2 != (!b))  {return NG;}
@@ -47,6 +50,8 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
 CHECK_RESULT dff_Check(){
         LCD_Clear();
         Q_TRIS = 0b11001100;
+        COMD_TRIS = 0;
+        COMCLR_TRIS = 0;
         LATB = 0;
         Q_LAT = 0x00;  //CLR.PRC‚ğ1(off)‚É
         DFF_PR1 = 1;
@@ -93,22 +98,26 @@ CHECK_RESULT dff_Check(){
 
 CHECK_RESULT count_check(){
     LCD_Clear();
-        
-    Q_TRIS = 0xff;
-    TRISB = 0x00;
-    LATB = 0;
-    CLOCK(CO_CLR)
+    Q_TRIS = 0xff;  
+    CO_CLK_TRIS = 0;
+    CO_CLR_TRIS = 0;
+    CO_CLR = 0;
+    CO_CLK = 0;
+    
+    CLOCK(CO_CLR)           //ƒNƒŠƒA’[q‚ğ1‚É‚µ‚Äo—Í‚ğƒNƒŠƒA
+    /* 1?15‚Ü‚Å’l‚ğƒJƒEƒ“ƒgƒAƒbƒv‚³‚¹Ao—Í‚ğƒ`ƒFƒbƒN */
     for(int i = 0;i < 16;i++){
         if(num_check(i) == 0){
             return NG;
         }
         CLOCK(CO_CLK)
     }
-    if(num_check(0) != 0){
+    if(num_check(0) != 0){      //16‰ñ–Ú‚ÌƒJƒEƒ“ƒgƒAƒbƒv‚ÅA0‚É‚È‚é‚±‚Æ‚ğƒ`ƒFƒbƒN
         return OK;
     }
 }
 
+/* ƒJƒEƒ“ƒgIC‚Ìo—Í‚ªˆø”‚Æ“™‚µ‚¢‚©‚ğƒ`ƒFƒbƒN */
 int num_check(int value){
     LCD_Clear();
     if(value != (Q_PORT & 0x0f)){
