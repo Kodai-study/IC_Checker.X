@@ -9,8 +9,10 @@
 #include <xc.h>
 #include "datas.h"
 
+
+
 extern const int ic_kinds;
-int is_info[] = {1,1,0,0,0,0,1,0,0,1};
+int is_info[] = {0};
 
 //#define SW1 PORTAbits.RA0
 
@@ -52,23 +54,24 @@ void sw_check(){
     
     if(SW1 == old1){
         if(++count1 >= 5){
-            if(SW1 == 1 && state1 == 0){
+            if(SW1 != 0 && state1 == 0){
                 sw1_flg = 1;
             }
             state1 = SW1;
-        } else {
-            count1 = 0;
-        }
+        } 
+    } else {
+       count1 = 0;
     }
+    
     if(SW2 == old2){
         if(++count2 >= 5){
-            if(SW2 == 1 && state2 == 0){
+            if(SW2 != 0 && state2 == 0){
                 sw2_flg = 1;
             }
             state2 = SW2;
-        } else {
-            count2 = 0;
-        }
+        } 
+    } else {
+        count2 = 0;
     }
     old1 = SW1;
     old2 = SW2;
@@ -76,10 +79,11 @@ void sw_check(){
 
 /* 引数で受け取った種類のICを単体チェックする。 */
 void single_check(int kind){
+    LCD_Clear();
     switch(kind){
-        case 1 : if(dff_Check() == OK) LCD_String("OK");  break;
-        case 2 : 
-        default : LCD_String("ERROR"); return;
+        case 1 : LCD_String("OK");  break;
+        case 2 : LCD_String("NG");  break;
+        default : LCD_String("ERROR"); break;
     }
     while(1){
         T0_WAIT;
@@ -90,11 +94,11 @@ void single_check(int kind){
                 
             } else if(sw2_flg != 0){
                 sw2_flg = 0;
-                mode = 0;
+                now_mode = RESULT;
                 return;
             }
         } else if(sw1_flg != 0 || sw2_flg != 0){
-            mode = 0;
+            now_mode = RESULT;
             return;
         }
     }
@@ -102,13 +106,13 @@ void single_check(int kind){
 
 void current_over(){
     LCD_Clear();
+    SW_TRIS = 0;
+    POWER_SW = 0;
     LCD_String("ｼｮｰﾄｼﾃｲﾏｽ ｾﾂｿﾞｸｦｶｸﾆﾝｼﾃｸﾀﾞｻｲ");
-    int count = 0;
+    TRISAbits.TRISA2 = 0;
+    LATB = 0;
     while(1){
-        T0_WAIT;
-        if(++count >= 250){
-            //LED_RED = !LED_RED;
-            count = 0;
-        }
+        __delay_ms(125);
+        LATAbits.LA2 = ~LATAbits.LA2;
     }
 }

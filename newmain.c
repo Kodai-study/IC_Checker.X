@@ -77,8 +77,7 @@
 #include "fucntions.h"
 #include "datas.h"
 
-#define POWER_SW LATBbits.LATB0     //チェック項目へ流す電源を接続するスイッチ
-#define SW_TRIS  TRISBbits.TRISB0   //電源制御リレー
+
 #define LED_BLUE LATAbits.LA0
 #define LED_RED LATAbits.LA1
 #define LED_GREEN LATAbits.LA2
@@ -95,12 +94,12 @@ static const char blank = 0b10100000;   //LCDで、空白を表示させるデータ
 static const char allow = 0x7e;         //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
-    " 74LS74 ",
-    " 74LS00 ",
-    " 74LS02 ",
-    " LM555 ",
-    " 74LS393",
-    " 74LS195"
+    "74LS74 ",
+    "74LS00 ",
+    "74LS02 ",
+    "LM555 ",
+    "74LS393",
+    "74LS195"
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
@@ -113,6 +112,9 @@ const char* mode_names[] = {    //チェックするモードを表示する文字列
 CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 char st[2][17] = {0};                   //LCDに表示する文字列
 int ng_count = 0;                       //チェックが失敗した項目の数をカウント
+MODE now_mode = HOME;
+int select_item = -1;
+
 void main() {
     //sprintf(st[0],"IC_%s",ic_names[0]);
     
@@ -123,25 +125,35 @@ void main() {
     INTCONbits.PEIE = 1;
     
     SW_TRIS = 0;
-    TRISA = 0x00;
+    TRISA = 0xff;
     TRISB = 0x00;
+    LATB = 0x03;
     LATA = 0b10101010;
     ADCON1 = 0x0f;      //全てディジタルピンに設定
     
     LATBbits.LATB0 = 1;
     LCD_Init();
     usart_init();
+    comp_init();
     LCD_String("start\n");
+    LCD_CursorOff();
     POWER_SW = 1;
     
     /* 1msごとのタイマ割り込みを設定 */
-    T0CON = 0b10000001;
-    TMR0H = (64534 >> 8);
-    TMR0L = (64534 & 0xff);
+    T0CON = 0b10000000;
+    TMR0H = (65035 >> 8);
+    TMR0L = (65035 & 0xff);
     INTCONbits.T0IE = 1;
     
+    SW2_TRIS = 1;
+    SW1_TRIS = 1;
     while(1){
-        
+        switch(now_mode){
+            case HOME : menu_mode(); break;
+            case CHECK_SELECT : select_check(); break;
+            case SINGLE_TEST:  LCD_String(ic_names[select_item]); single_check(select_item); break;
+            default : break;
+        }
        /* if(count_check() == OK){
             LATBbits.LATB3 = 1;
             LCD_String("OK");
@@ -150,7 +162,6 @@ void main() {
             LATBbits.LATB3 = 0;
             LCD_String("NG");
         }*/
-        __delay_ms(1000);
     }
     
        /**  実装予定のコード
@@ -194,23 +205,23 @@ void main() {
         }
     }
     */
-    
+
     return;
 }
 
 /* 単体チェックか、全てをチェックするかを選択する */
 void menu_mode(){
     LCD_Clear();        
-    static int cur = 0;     //選択モードがどちらかを格納
+    static unsigned int cur = 0;     //選択モードがどちらかを格納
     SW1_TRIS = 1;           
     SW2_TRIS = 1;
     
-    /* 初期は全てチェックモード */
-    LCD_Character(dot);         
+    /* 初期は全てチェックモード */       
     LCD_String(mode_names[0]);
-    LCD_Character('\n');
+    LCD_String("\n");
     LCD_String(mode_names[1]);
-    
+    LCD_Locate(cur,0);
+    LCD_Character(dot);
     while(1){
         T0_WAIT
         sw_check();     //1msごとに、スイッチが押されたかどうかチェック
@@ -226,7 +237,7 @@ void menu_mode(){
         /* スイッチ2が押されたら、選択されたモードに移行 */
         if(sw2_flg != 0){
             sw2_flg = 0;
-            mode = (cur == 0) ? 1 : 2;
+            now_mode = (cur == 0) ? ALL_CHECK : CHECK_SELECT;
             return;
         }
     }
@@ -235,7 +246,7 @@ void menu_mode(){
 /* 単体チェックモードで、チェックする項目を決める */
 void select_check(){
     LCD_Clear();
-    static int cur = 0;
+    static unsigned int cur = 0;
     /* 最初の0,1個めを表示する */
     LCD_Character(dot);
     LCD_String(ic_names[cur]);
@@ -244,7 +255,7 @@ void select_check(){
     LCD_Locate(1,15);
     LCD_Character(allow); 
     while(1){
-        T0_WAIT
+        T0_WAIT;
         sw_check();
         if(sw1_flg != 0){
             LCD_Clear();
@@ -255,15 +266,16 @@ void select_check(){
             if(cur < ic_kinds - 1){
                 LCD_Character(dot);
                 LCD_String(ic_names[cur]);
-                LCD_Character('\n');
+                LCD_String("\n ");
                 LCD_String(ic_names[cur + 1]);
                 if(cur < ic_kinds - 2){
                     LCD_Locate(1,15);
                     LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
                 }
-            } else if(cur < ic_kinds){
+            } else if(cur == ic_kinds - 1){
+                LCD_Character(blank);
                 LCD_String(ic_names[cur - 1]);
-                LCD_Character('\n');
+                LCD_String("\n");
                 LCD_Character(dot);
                 LCD_String(ic_names[cur]);
             } else {
@@ -278,7 +290,13 @@ void select_check(){
         }
         
         if(sw2_flg != 0){
-            single_check(cur);
+            LCD_Clear();
+            LCD_Number(cur);
+            select_item = cur;
+            LCD_Number(select_item);
+            
+            now_mode = SINGLE_TEST;
+            LCD_Number(now_mode);
             return;
         }
         
@@ -293,20 +311,19 @@ void __interrupt ( ) isr (void){
             current_over();
             stop = 1;                  
         }
+        LCD_Number(CMCONbits.C1OUT);
     }
     /* USARTで値を受け取ったとき */
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
         rx_buf = RCREG;
         LCD_Number(RCREG);
-    } else if(PIR1bits.TXIF != 0){
-        
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){
        INTCONbits.TMR0IF = 0;
-        TMR0H = (64534 >> 8);
-        TMR0L = (64534 & 0xff);
+        TMR0H = (65035 >> 8);
+        TMR0L = (65035 & 0xff);
         t0_flg = 1;
     }
 }

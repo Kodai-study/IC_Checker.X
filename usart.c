@@ -14,7 +14,7 @@ void usart_init(){
     RCSTA  = 0b10010000 ;    //TX,RXを通信ピンに割り当て
     SPBRG = 5;              //通信速度を9600Hzに設定 (4000000 / (64*5))
     SPBRGH = 5;
-    PIE1bits.TXIE = 1;
+    //PIE1bits.TXIE = 1;
     PIE1bits.RCIE = 1;
 }
 

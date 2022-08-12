@@ -12,10 +12,13 @@
 #define P(sym,num) PORT##sym ##bits.R##sym ##num 
 #define TRIS(sym,num) TRIS##sym ##bits.TRIS##sym ##num 
 
-#define SW1 P(A,0)
-#define SW1_TRIS TRIS(A,0)
-#define SW2 P(A,1)
-#define SW2_TRIS TRIS(A,1)
+#define SW1 P(B,2)
+#define SW1_TRIS TRIS(B,2)
+#define SW2 P(B,7)
+#define SW2_TRIS TRIS(A,7)
+
+#define POWER_SW LAT(B,1)     //チェック項目へ流す電源を接続するスイッチ
+#define SW_TRIS  TRIS(B,1)   //電源制御リレー
 
 #define CLOCK(a)  a = 1; __delay_ms(PLUS_TIME); a = 0;
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
@@ -30,8 +33,8 @@
 }PORT_NUM;*/
 
 typedef enum _now_mode{
-    HOME, ALL_CHECK, CHECK_SELECT, RESULT, IS_TEST
-};
+    HOME, ALL_CHECK, CHECK_SELECT, RESULT, IS_TEST, SINGLE_TEST
+}MODE;
 
 typedef enum __checkstats{
     NO_CHECK, OK, NG, NOTFOUND
@@ -47,6 +50,8 @@ extern _Bool sw1_flg;
 extern _Bool sw2_flg;
 extern _Bool stop;
 extern int mode;
+extern MODE now_mode;
+extern const char* ic_names[];
 
 CHECK_RESULT dff_Check(void);
 CHECK_RESULT nand_check(int mode);
@@ -60,4 +65,7 @@ void usart_init();
 void sw_check(void);
 void single_check(int kind);
 void current_over(void);
+void menu_mode(void);
+void select_check(void);
+void comp_init(void);
 #endif	/* XC_HEADER_TEMPLATE_H */
