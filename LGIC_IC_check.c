@@ -47,7 +47,7 @@ extern unsigned char bitPattern[8]; //“Y‚¦š‚Ì”‚Ìƒrƒbƒg‚Ì‚İ‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  * 0,1,0,1 ‚Ì‡‚É•Ï‰»‚·‚é‚±‚Æ‚ğŠm‚©‚ß‚é
  * 
  */
-CHECK_RESULT dff_Check(){
+CHECK_RESULT dff_Check(int mode){
         LCD_Clear();
         Q_TRIS = 0b11001100;
         COMD_TRIS = 0;
@@ -97,7 +97,7 @@ CHECK_RESULT dff_Check(){
 
 int num_check(int value);
 
-CHECK_RESULT count_check(){
+CHECK_RESULT count_check(int mode){
     LCD_Clear();
     Q_TRIS = 0xff;  
     CO_CLK_TRIS = 0;

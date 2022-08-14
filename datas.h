@@ -24,6 +24,15 @@
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
 #define T0_WAIT while(t0_flg == 0) {;} t0_flg = 0;
 
+typedef enum _now_mode{
+    HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST
+}MODE;
+
+typedef enum __checkstats{
+    NO_CHECK, OK, NG, NOTFOUND, ERROR
+}CHECK_RESULT;
+
+
 /*typedef enum __portnumber{
     A,
     B,
@@ -32,13 +41,7 @@
     E
 }PORT_NUM;*/
 
-typedef enum _now_mode{
-    HOME, ALL_CHECK, CHECK_SELECT, RESULT, IS_TEST, SINGLE_TEST
-}MODE;
 
-typedef enum __checkstats{
-    NO_CHECK, OK, NG, NOTFOUND
-}CHECK_RESULT;
 
 unsigned char bitPattern[8] = {
     0x01, 0x02, 0x04, 0x08, 
@@ -52,14 +55,18 @@ extern _Bool stop;
 extern int mode;
 extern MODE now_mode;
 extern const char* ic_names[];
+extern int select_item;
+extern CHECK_RESULT (*check_func[])(int);
 
-CHECK_RESULT dff_Check(void);
+CHECK_RESULT dff_Check(int mode);
 CHECK_RESULT nand_check(int mode);
-CHECK_RESULT count_check(void);
+CHECK_RESULT nor_check(int mode);
+CHECK_RESULT count_check(int mode);
+CHECK_RESULT TMchecker(int mode);
 
 //void clock(PORT_NUM portnumber,int bitNum);
 //void downClock(PORT_NUM portnumber,int bitNum);
-CHECK_RESULT TMchecker();
+
 void viewResults();
 void usart_init();
 void sw_check(void);
@@ -68,4 +75,9 @@ void current_over(void);
 void menu_mode(void);
 void select_check(void);
 void comp_init(void);
+void cancel(void);
+void mode_change(void);
+
+
+
 #endif	/* XC_HEADER_TEMPLATE_H */

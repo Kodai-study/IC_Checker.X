@@ -29,7 +29,7 @@ int offCount = 0;
 const int cycle = (int)(1000.0 / 12.025);   //12.25Hz‚ÌŽž‚ÌŽüŠú(ms)
 int cycleCount = 0;
 
-CHECK_RESULT TMchecker(){
+CHECK_RESULT TMchecker(int mode){
     
     ADCON1 = 0xff;
     TM_OUT_TRIS = 1;    

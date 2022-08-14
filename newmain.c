@@ -89,9 +89,9 @@ _Bool sw2_flg = 0;  //スイッチ2が押されたときに1になる
 int hoge_count = 0;
 char rx_buf = 0;    //USARTで受け取った値を保存
 int mode = 1;       
-static const char dot = 0b10100101;     //LCDで、選択項目を表すドットのデータ
-static const char blank = 0b10100000;   //LCDで、空白を表示させるデータ
-static const char allow = 0x7e;         //右矢印〃
+static const char dot = 0xa5;     //LCDで、選択項目を表すドットの文字コード
+static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
+static const char allow = 0x7e;   //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     "74LS74 ",
@@ -103,6 +103,10 @@ const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
+CHECK_RESULT (*check_func[])(int) = {
+    dff_Check, nand_check, count_check, TMchecker, nor_check
+};
+
 const char* mode_names[] = {    //チェックするモードを表示する文字列
     " ALLﾁｪｯｸ",
     " ﾀﾝﾀｲﾁｪｯｸ"
@@ -112,19 +116,17 @@ const char* mode_names[] = {    //チェックするモードを表示する文字列
 CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 char st[2][17] = {0};                   //LCDに表示する文字列
 int ng_count = 0;                       //チェックが失敗した項目の数をカウント
-MODE now_mode = HOME;
-int select_item = -1;
+MODE now_mode = HOME;                   //現在の動作モード
+int select_item = -1;                   //単体チェックでチェックする項目(-1)は選択なし
 
 void main() {
-    //sprintf(st[0],"IC_%s",ic_names[0]);
-    
     OSCCON = 0b01100000;    //クロックを4MHzに設定
     /* 優先度なしで、割り込みを許可 */
     RCONbits.IPEN = 0;
     INTCONbits.GIE = 1;
     INTCONbits.PEIE = 1;
     
-    SW_TRIS = 0;
+           
     TRISA = 0xff;
     TRISB = 0x00;
     LATB = 0x03;
@@ -137,7 +139,8 @@ void main() {
     comp_init();
     LCD_String("start\n");
     LCD_CursorOff();
-    POWER_SW = 1;
+    SW_TRIS = 0; 
+    POWER_SW = 1;   //電源リレーをオンにして電源を供給
     
     /* 1msごとのタイマ割り込みを設定 */
     T0CON = 0b10000000;
@@ -145,9 +148,12 @@ void main() {
     TMR0L = (65035 & 0xff);
     INTCONbits.T0IE = 1;
     
+    INTCONbits.INT0E = 1;
+    
     SW2_TRIS = 1;
     SW1_TRIS = 1;
     while(1){
+        /* 現在のモードに合わせて関数を呼び出し */
         switch(now_mode){
             case HOME : menu_mode(); break;
             case CHECK_SELECT : select_check(); break;
@@ -254,6 +260,7 @@ void select_check(){
     LCD_String(ic_names[cur + 1]);
     LCD_Locate(1,15);
     LCD_Character(allow); 
+    
     while(1){
         T0_WAIT;
         sw_check();
@@ -272,6 +279,7 @@ void select_check(){
                     LCD_Locate(1,15);
                     LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
                 }
+                /* 最終項目では、下の段を選択 */
             } else if(cur == ic_kinds - 1){
                 LCD_Character(blank);
                 LCD_String(ic_names[cur - 1]);
@@ -287,16 +295,12 @@ void select_check(){
                 LCD_Locate(1,15);
                 LCD_Character(allow); 
             }
-        }
+        }   //スイッチ1が押されたら
         
+        /* スイッチ2が押されたら、現在選択されている項目をチェック */
         if(sw2_flg != 0){
-            LCD_Clear();
-            LCD_Number(cur);
-            select_item = cur;
-            LCD_Number(select_item);
-            
-            now_mode = SINGLE_TEST;
-            LCD_Number(now_mode);
+            select_item = cur;      
+            now_mode = SINGLE_TEST; //選択項目を現在のカーソルにして、単体チェックモードに移行
             return;
         }
         
@@ -311,7 +315,7 @@ void __interrupt ( ) isr (void){
             current_over();
             stop = 1;                  
         }
-        LCD_Number(CMCONbits.C1OUT);
+        //LCD_Number(CMCONbits.C1OUT);
     }
     /* USARTで値を受け取ったとき */
     if(PIR1bits.RCIF != 0){
@@ -325,5 +329,9 @@ void __interrupt ( ) isr (void){
         TMR0H = (65035 >> 8);
         TMR0L = (65035 & 0xff);
         t0_flg = 1;
+    }
+    if(INTCONbits.INT0IF != 0){
+        INTCONbits.INT0IF = 0;
+        mode_change();
     }
 }

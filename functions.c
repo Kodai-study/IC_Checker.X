@@ -9,8 +9,6 @@
 #include <xc.h>
 #include "datas.h"
 
-
-
 extern const int ic_kinds;
 int is_info[] = {0};
 
@@ -79,40 +77,74 @@ void sw_check(){
 
 /* 引数で受け取った種類のICを単体チェックする。 */
 void single_check(int kind){
+    CHECK_RESULT result = NO_CHECK;
     LCD_Clear();
+    LCD_String(ic_names[select_item]);
+    LCD_String(" : \nchecking...");
+    LCD_CursorOn();
+    
+    /* 選択されたICを単体チェックして、結果を変数に格納 */
     switch(kind){
-        case 1 : LCD_String("OK");  break;
-        case 2 : LCD_String("NG");  break;
-        default : LCD_String("ERROR"); break;
+        case 1 : result = OK;    break;
+        case 2 : result = NG;   break;
+        default : result = ERROR;   break;
+    }
+    LCD_CursorOff();
+    /* チェックの結果を表示 */
+    switch(result){
+        case OK : LCD_Locate(1,0); LCD_String("OK!!!       ");  break;      //OKならば2行目にOKを表示
+        case NG : LCD_Clear(); LCD_String(ic_names[select_item]);
+            LCD_String(" : NG!!\nｹｯﾃｲ : ｻｲｼｹﾝ");  break;             //NGなら、2行目に次の指示を表示
+        case ERROR : LCD_Locate(1,0);  LCD_String("ERROR...");  break;
+        default : break;
     }
     while(1){
         T0_WAIT;
-        sw_check();
-        if(is_info[kind] != 0){
-            if(sw1_flg != 0){
-                sw1_flg = 0;
-                
-            } else if(sw2_flg != 0){
-                sw2_flg = 0;
-                now_mode = RESULT;
-                return;
-            }
-        } else if(sw1_flg != 0 || sw2_flg != 0){
-            now_mode = RESULT;
+        sw_check();         
+        if(sw2_flg != 0){
+            now_mode = SINGLE_TEST;
             return;
         }
     }
 }
 
+/* 電流が基準値を超えたときに警告を表示してプログラムを終了する。 */
 void current_over(){
     LCD_Clear();
     SW_TRIS = 0;
     POWER_SW = 0;
-    LCD_String("ｼｮｰﾄｼﾃｲﾏｽ ｾﾂｿﾞｸｦｶｸﾆﾝｼﾃｸﾀﾞｻｲ");
+    LCD_String("ｶﾃﾞﾝﾘｭｳｦｹﾝｼｭﾂ\nｾﾂｿﾞｸｦｶｸﾆﾝｼﾃ ﾘｾｯﾄ");
     TRISAbits.TRISA2 = 0;
+    
     LATB = 0;
-    while(1){
+    while(1){       //他のプログラムへは移行しない
         __delay_ms(125);
-        LATAbits.LA2 = ~LATAbits.LA2;
+        LATAbits.LA2 = ~LATAbits.LA2;   //赤色LEDを点滅
     }
+}
+
+void cancel(){
+    LCD_Clear();
+    LCD_String("ｷｬﾝｾﾙｼﾏｼﾀ...");
+    for(int i = 0;i < 700;i++){
+        T0_WAIT;
+    }
+    return;
+}
+
+/* sw3、戻るボタンが押された時に、前のモードに戻る処理 */
+void mode_change(){
+    //HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST
+    switch(now_mode){
+        case ALL_CHECK    : cancel();
+        case CHECK_SELECT :                 // 全体チェック、選択画面、全体チェックの時はホーム画面に戻る
+        case ALL_RESULT   : now_mode = HOME; break; 
+        case SINGLE_TEST  : cancel();
+        case SINGLE_RESULT: now_mode = CHECK_SELECT; break; //単体テスト中、単体テストの結果表示の時は項目選択画面に戻る
+        default : break;
+    }
+}
+
+void all_check(){
+    
 }
