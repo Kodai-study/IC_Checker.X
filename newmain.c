@@ -103,7 +103,7 @@ const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
-CHECK_RESULT (*check_func[])(int) = {
+CHECK_RESULT (*check_funcs[])(int) = {
     dff_Check, nand_check, count_check, TMchecker, nor_check
 };
 
@@ -134,10 +134,10 @@ void main() {
     ADCON1 = 0x0f;      //全てディジタルピンに設定
     
     LATBbits.LATB0 = 1;
-    LCD_Init();
+    
     usart_init();
-    comp_init();
-    LCD_String("start\n");
+   // comp_init();
+    
     LCD_CursorOff();
     SW_TRIS = 0; 
     POWER_SW = 1;   //電源リレーをオンにして電源を供給
@@ -152,14 +152,19 @@ void main() {
     
     SW2_TRIS = 1;
     SW1_TRIS = 1;
+    LCD_Init();
+    LCD_String("start\n");
     while(1){
-        /* 現在のモードに合わせて関数を呼び出し */
+        /* 現在のモードに合わせて関数を呼び出し 
         switch(now_mode){
             case HOME : menu_mode(); break;
             case CHECK_SELECT : select_check(); break;
             case SINGLE_TEST:  LCD_String(ic_names[select_item]); single_check(select_item); break;
             default : break;
-        }
+        }*/
+        if(count2_check(0)==OK)
+            LCD_String("OK");
+        __delay_ms(1000);
        /* if(count_check() == OK){
             LATBbits.LATB3 = 1;
             LCD_String("OK");
@@ -228,7 +233,7 @@ void menu_mode(){
     LCD_String(mode_names[1]);
     LCD_Locate(cur,0);
     LCD_Character(dot);
-    while(1){
+    while(now_mode == HOME){
         T0_WAIT
         sw_check();     //1msごとに、スイッチが押されたかどうかチェック
         /* スイッチ1が押されたら、選択モードを変更 */
@@ -261,7 +266,7 @@ void select_check(){
     LCD_Locate(1,15);
     LCD_Character(allow); 
     
-    while(1){
+    while(now_mode == CHECK_SELECT){
         T0_WAIT;
         sw_check();
         if(sw1_flg != 0){
@@ -322,6 +327,7 @@ void __interrupt ( ) isr (void){
         PIR1bits.RCIF = 0;
         rx_buf = RCREG;
         LCD_Number(RCREG);
+
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){

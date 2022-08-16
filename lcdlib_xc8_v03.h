@@ -22,7 +22,7 @@
 //
 //                        Copyright(C) Yasuharu Yajima 2007
 //*****************************************************************************
-//#define PORT_CHANGE
+#define PORT_CHANGE
 #ifndef _LCDLIB_XC8_V02_H
 #define _LCDLIB_XC8_V02_H
 

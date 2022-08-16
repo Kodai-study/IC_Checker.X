@@ -82,7 +82,7 @@ void single_check(int kind){
     LCD_String(ic_names[select_item]);
     LCD_String(" : \nchecking...");
     LCD_CursorOn();
-    
+    //result = check_funcs[kind]();
     /* 選択されたICを単体チェックして、結果を変数に格納 */
     switch(kind){
         case 1 : result = OK;    break;
@@ -146,5 +146,11 @@ void mode_change(){
 }
 
 void all_check(){
-    
+    LCD_Clear();
+    LCD_String("ﾁｪｯｸﾁｭｳ...");
+    TXREG = 0xff;
+    for(int i = 0;i < 5;i++){
+        results[i] = check_funcs[i](1);
+    }
+    TXREG = 0xfe;
 }

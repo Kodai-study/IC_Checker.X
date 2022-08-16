@@ -56,13 +56,17 @@ extern int mode;
 extern MODE now_mode;
 extern const char* ic_names[];
 extern int select_item;
-extern CHECK_RESULT (*check_func[])(int);
+extern CHECK_RESULT (*check_funcs[])(int);
+extern CHECK_RESULT results[];
 
 CHECK_RESULT dff_Check(int mode);
 CHECK_RESULT nand_check(int mode);
 CHECK_RESULT nor_check(int mode);
 CHECK_RESULT count_check(int mode);
 CHECK_RESULT TMchecker(int mode);
+CHECK_RESULT opamp_check(int mode);
+CHECK_RESULT seg7_decode(int mode);
+CHECK_RESULT count2_check(int mode);
 
 //void clock(PORT_NUM portnumber,int bitNum);
 //void downClock(PORT_NUM portnumber,int bitNum);
