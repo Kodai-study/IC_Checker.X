@@ -81,7 +81,7 @@ void select_check(void);
 void comp_init(void);
 void cancel(void);
 void mode_change(void);
-
+void all_check(void);
 
 
 #endif	/* XC_HEADER_TEMPLATE_H */

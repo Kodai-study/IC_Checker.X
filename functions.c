@@ -12,35 +12,6 @@
 extern const int ic_kinds;
 int is_info[] = {0};
 
-//#define SW1 PORTAbits.RA0
-
-//#define SW2 PORTAbits.RA0
-
-
-/* ポート番号、ビット数を入れると、その端子に立ち上がりクロックを出力する */
-/*
-void clock(PORT_NUM portnumber,int bitNum){
-    switch(portnumber){
-        case A : LATA |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATA &= ~bitPattern[bitNum]; break;
-        case B : LATB |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATB &= ~bitPattern[bitNum]; break;
-        case C : LATC |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATC &= ~bitPattern[bitNum]; break;
-        case D : LATD |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATD &= ~bitPattern[bitNum]; break;
-        case E : LATE |= bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATE &= ~bitPattern[bitNum]; break;
-    }
-}
-*/
-/* ポート番号、ビット数を入て、その端子に立ち下がりクロックを出力する */
-/*
-void downClock(PORT_NUM portnumber,int bitNum){
-    switch(portnumber){
-        case A : LATA &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATA |= bitPattern[bitNum]; break;
-        case B : LATB &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATB |= bitPattern[bitNum]; break;
-        case C : LATC &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATC |= bitPattern[bitNum]; break;
-        case D : LATD &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATD |= bitPattern[bitNum]; break;
-        case E : LATE &= ~bitPattern[bitNum]; __delay_ms(PLUS_TIME); LATE |= bitPattern[bitNum]; break;
-    }
-}*/
-
 /* スイッチ1，2を監視して、新たに押されたらフラグを立てる */
 void sw_check(){
     static int count1 = 0;
@@ -85,8 +56,9 @@ void single_check(int kind){
     //result = check_funcs[kind]();
     /* 選択されたICを単体チェックして、結果を変数に格納 */
     switch(kind){
-        case 1 : result = OK;    break;
-        case 2 : result = NG;   break;
+        case 0 : result = opamp_check(1); break;
+        case 1 : result = nand_check(1);    break;
+        case 2 : result = nor_check(1);   break;
         default : result = ERROR;   break;
     }
     LCD_CursorOff();
@@ -98,12 +70,20 @@ void single_check(int kind){
         case ERROR : LCD_Locate(1,0);  LCD_String("ERROR...");  break;
         default : break;
     }
-    while(1){
+    now_mode = SINGLE_RESULT;
+    while(now_mode == SINGLE_RESULT){
         T0_WAIT;
         sw_check();         
         if(sw2_flg != 0){
-            now_mode = SINGLE_TEST;
+            sw2_flg = 0;
+            if(result == NG)
+                now_mode = SINGLE_TEST;
+            else
+                now_mode = CHECK_SELECT;
             return;
+        }
+        if(sw1_flg != 0){
+            sw1_flg = 0;
         }
     }
 }
@@ -126,9 +106,7 @@ void current_over(){
 void cancel(){
     LCD_Clear();
     LCD_String("ｷｬﾝｾﾙｼﾏｼﾀ...");
-    for(int i = 0;i < 700;i++){
-        T0_WAIT;
-    }
+    __delay_ms(700);
     return;
 }
 
@@ -149,8 +127,6 @@ void all_check(){
     LCD_Clear();
     LCD_String("ﾁｪｯｸﾁｭｳ...");
     TXREG = 0xff;
-    for(int i = 0;i < 5;i++){
-        results[i] = check_funcs[i](1);
-    }
+    
     TXREG = 0xfe;
 }

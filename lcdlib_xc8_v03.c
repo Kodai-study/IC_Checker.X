@@ -101,6 +101,7 @@ void LCD_Init(void)
 	TRISEbits.TRISE0=0;
 	TRISEbits.TRISE1=0;
 	TRISEbits.TRISE2=0;
+    
 	__delay_ms(10);
 	/*LCD_WRITE*/
 	TRIS_DB4=0;

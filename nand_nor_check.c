@@ -10,11 +10,11 @@
 #include "datas.h"
 #include "fucntions.h"
 
-#define COM_INPUT       LAT(B,0)
-#define COM_INPUT_TRIS  TRIS(B,0)
-#define IC3_TRIS TRISA
-#define IC3_LAT LATA
-#define IC3_PORT PORTA
+#define COM_INPUT       LAT(C,5)
+#define COM_INPUT_TRIS  TRIS(C,5)
+#define IC3_TRIS TRISD
+#define IC3_LAT LATD
+#define IC3_PORT PORTD
 #define NAND_INPUT 0x0f     //NANDのチェックで、ICへの入力に割り当てられるビット
 #define NAND_OUTPUT 0xf0    //NANDのチェックで、ICのの出力の読み取りに割り当てられるビット
 #define NOR_INPUT NAND_OUTPUT   //NORの入力、出力端子は、NANDの端子設定と逆
@@ -31,11 +31,13 @@ CHECK_RESULT nand_check(int mode){
         
     /* 入力を00?11まで切り替え、出力が真理値表通りであることを確かめる */
     for(int i = 0;i <= 3; i++){
+        LCD_Number(i);
         COM_INPUT = i % 2;                 //入力の1桁目の値を共通部分に出力
         IC3_LAT = (i & 0x02) != 0 ? NAND_INPUT : 0;  //2桁目は、それぞれの入力部に出力
         __delay_ms(WAIT_TIME);
 
         unsigned char data = IC3_PORT & NAND_OUTPUT;
+        LCD_HNumber(IC3_PORT,2);
         if(result[i] == 0 && data != 0){  //出力の真理値が0の時に、出力が0ならOK
             return NG;
         } else if(result[i] == 1 && data != NAND_OUTPUT){    //真理値1の時、出力が1ならOK
@@ -48,7 +50,7 @@ CHECK_RESULT nand_check(int mode){
 
 CHECK_RESULT nor_check(int mode){
    
-    const int result[4] =  {0, 1, 1, 1};  //NAND,NORの真理値表の結果
+    const int result[4] =  {1, 0, 0, 0};  //NAND,NORの真理値表の結果
        
     COM_INPUT_TRIS = 0;
 
@@ -57,10 +59,11 @@ CHECK_RESULT nor_check(int mode){
         
     /* 入力を00?11まで切り替え、出力が真理値表通りであることを確かめる */
     for(int i = 0;i <= 3; i++){
+        LCD_Number(i);
         COM_INPUT = i % 2;                 //入力の1桁目の値を共通部分に出力
         IC3_LAT = (i & 0x02) != 0 ? NOR_INPUT : 0;  //2桁目は、それぞれの入力部に出力
         __delay_ms(WAIT_TIME);
-
+        LCD_HNumber(IC3_PORT,2);
         unsigned char data = IC3_PORT & NOR_OUTPUT;
         if(result[i] == 0 && data != 0){  //出力の真理値が0の時に、出力が全て0ならOK
             return NG;

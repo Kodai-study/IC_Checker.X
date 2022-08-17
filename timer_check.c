@@ -10,9 +10,10 @@
 #include <stdio.h>
 #include "datas.h"
 
-#define TM_OUT PORTBbits.RB1
-#define TM_OUT_TRIS TRISBbits.RB0
-#define TM_SELECT LATBbits.LATB1
+#define TM_OUT P(B,3)
+#define TM_OUT_TRIS TRIS(B,3)
+#define TM_SELECT LAT(B,4)
+#define TM_SL_TRIS TRIS(B,4)
 
 
 /**
@@ -27,14 +28,14 @@
 int onCount = 0;    //出力が0nだった回数=時間(ms)をカウント
 int offCount = 0;   
 const int cycle[] = {(int)(1000.0 / 12.025), (int)(1000.0 / 49.58),};   //12.25Hzの時の周期(ms)
-const double on_time[] = {91.6, 65.6};
+const double on_time[] = {0.916, 0.656};
 int cycleCount = 0;
 
 CHECK_RESULT TMchecker(int mode){
     
     ADCON1 = 0xff;
-    TM_OUT_TRIS = 1;    
-    TRISB = 0xff;
+    TM_OUT_TRIS = 1; 
+    TM_SL_TRIS = 0;
     __delay_ms(100);
     LCD_Number(t0_flg);
     LCD_String("ﾀｲﾏｶｲｼ\n");
@@ -46,43 +47,45 @@ CHECK_RESULT TMchecker(int mode){
         TM_SELECT = i;
         while((new = TM_OUT) == 0 || old != 0){
             old = new;
-            T0_WAIT
         }
 
         /* 4周期周波数とデューティー比を測る */
-        for(int i = 0;i < 4;i++){
-            onCount = 0;
+        for(int j = 0;j < 4;j++){
+            LCD_Clear();
+            onCount = 1;
             offCount = 0;
             while(TM_OUT != 0){
                 onCount++;
-                LATAbits.LA0 = 1;
-                T0_WAIT
-                //__delay_ms(1);
+                T0_WAIT;
             }
+            onCount++;
             while(TM_OUT == 0){
                 offCount++;
-                LATAbits.LA0 = 0;
-                T0_WAIT
-               // __delay_ms(1);
+                T0_WAIT;
             }
+            offCount++;
             cycleCount = onCount + offCount;    //1周期の時間(ms)
 
-            // 周期、デューティー比が既定の±5%以上離れていたら失敗とする 
-           if(cycleCount >= (int)(cycle[i] * 1.1) ||
-               cycleCount <= (int)(cycle[i] * 0.9) || //周期が理論値±5%
-               (double)onCount / cycleCount <= on_time[i] * 1.1  ||  //オン時間が±5%
-               (double)onCount / cycleCount >= on_time[i] * 0.9 )
+            // 周期、デューティー比が既定の±20%以上離れていたら失敗とする 
+           if(cycleCount >= (int)(cycle[i] * 1.2) ||
+               cycleCount <= (int)(cycle[i] * 0.8) || //周期が理論値±20%
+               ((double)onCount / cycleCount) >= on_time[i] * 1.2  ||  //オン時間が±20%
+               ((double)onCount / cycleCount) <= on_time[i] * 0.8 )
+           {
                 return NG;
-    
+           }
         }
+        viewResults();
+        __delay_ms(500);
     }
     return OK;  //4周期測定して、周波数とデューティー比が範囲内ならOK
 }
 
 void viewResults(){
     char st[16];
-    sprintf(st,"%.2f:%.2f:%.2f",
-            1.0 / (cycleCount / 1000.0),(double)onCount / cycleCount,(double)offCount / cycleCount );
-            //1.0 / (cycleCount / 1000.0),onCount,offCount);
+    sprintf(st,"%d:%d\n%.2f:%.2f",
+            cycleCount,cycle[0],((double)onCount / cycleCount),on_time[0] );
+
     LCD_String(st);
+
 }

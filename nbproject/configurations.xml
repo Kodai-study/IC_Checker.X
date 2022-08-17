@@ -25,6 +25,7 @@
       <itemPath>hoge.c</itemPath>
       <itemPath>IC_3.c</itemPath>
       <itemPath>analog.c</itemPath>
+      <itemPath>7seg.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

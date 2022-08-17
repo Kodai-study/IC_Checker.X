@@ -129,16 +129,16 @@ void main() {
            
     TRISA = 0xff;
     TRISB = 0x00;
-    LATB = 0x03;
+    LATB = 0x00;
     LATA = 0b10101010;
     ADCON1 = 0x0f;      //全てディジタルピンに設定
     
     LATBbits.LATB0 = 1;
     
-    usart_init();
+    //usart_init();
    // comp_init();
     
-    LCD_CursorOff();
+    
     SW_TRIS = 0; 
     POWER_SW = 1;   //電源リレーをオンにして電源を供給
     
@@ -148,23 +148,24 @@ void main() {
     TMR0L = (65035 & 0xff);
     INTCONbits.T0IE = 1;
     
-    INTCONbits.INT0E = 1;
+    INTCONbits.INT0E = 1;   //外部割込み
+    INTCON2bits.INTEDG0 = 0;    //立ちがりで割り込み
     
     SW2_TRIS = 1;
     SW1_TRIS = 1;
+    __delay_ms(10);
     LCD_Init();
     LCD_String("start\n");
+    LCD_CursorOff();
     while(1){
-        /* 現在のモードに合わせて関数を呼び出し 
+        /* 現在のモードに合わせて関数を呼び出し */
         switch(now_mode){
             case HOME : menu_mode(); break;
             case CHECK_SELECT : select_check(); break;
             case SINGLE_TEST:  LCD_String(ic_names[select_item]); single_check(select_item); break;
+            case ALL_CHECK : all_check(); break;
             default : break;
-        }*/
-        if(count2_check(0)==OK)
-            LCD_String("OK");
-        __delay_ms(1000);
+        }
        /* if(count_check() == OK){
             LATBbits.LATB3 = 1;
             LCD_String("OK");
@@ -304,6 +305,7 @@ void select_check(){
         
         /* スイッチ2が押されたら、現在選択されている項目をチェック */
         if(sw2_flg != 0){
+            sw2_flg = 0;
             select_item = cur;      
             now_mode = SINGLE_TEST; //選択項目を現在のカーソルにして、単体チェックモードに移行
             return;
@@ -331,13 +333,15 @@ void __interrupt ( ) isr (void){
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){
-       INTCONbits.TMR0IF = 0;
+        INTCONbits.TMR0IF = 0;
         TMR0H = (65035 >> 8);
         TMR0L = (65035 & 0xff);
         t0_flg = 1;
     }
     if(INTCONbits.INT0IF != 0){
         INTCONbits.INT0IF = 0;
+        TRIS(C,3) = 0;
+        LAT(C,3) = ~LAT(C,3);
         mode_change();
     }
 }
