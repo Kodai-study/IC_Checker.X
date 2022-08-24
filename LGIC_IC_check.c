@@ -32,7 +32,7 @@
 #define DFF_COMD   LAT(C,1)
 
 #define COMCLR_TRIS TRIS(C,0)
-#define COMD_TRIS TRIS(C,1)
+#define COMD_TRIS   TRIS(C,1)
 
 #define CO_CLR DFF_COMD
 #define CO_CLK DFF_COMCLR
