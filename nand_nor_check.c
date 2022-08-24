@@ -10,13 +10,13 @@
 #include "datas.h"
 #include "fucntions.h"
 
-#define COM_INPUT       LAT(C,5)
-#define COM_INPUT_TRIS  TRIS(C,5)
-#define IC3_TRIS TRISD
-#define IC3_LAT LATD
-#define IC3_PORT PORTD
-#define NAND_INPUT 0x0f     //NANDのチェックで、ICへの入力に割り当てられるビット
-#define NAND_OUTPUT 0xf0    //NANDのチェックで、ICのの出力の読み取りに割り当てられるビット
+#define COM_INPUT        LAT(C,2)
+#define COM_INPUT_TRIS  TRIS(C,2)
+#define IC3_TRIS TRISB
+#define IC3_LAT LATB
+#define IC3_PORT PORTB
+#define NAND_INPUT  0b10100101     //NANDのチェックで、ICへの入力に割り当てられるビット
+#define NAND_OUTPUT 0b01011010    //NANDのチェックで、ICのの出力の読み取りに割り当てられるビット
 #define NOR_INPUT NAND_OUTPUT   //NORの入力、出力端子は、NANDの端子設定と逆
 #define NOR_OUTPUT NAND_INPUT   
 

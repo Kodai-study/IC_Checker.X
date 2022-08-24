@@ -16,6 +16,8 @@
 #define MODE      LAT(B,1)
 #define MODE_TRIS TRIS(B,1)
 
+#define REG_CHANGE LAT(A,3)
+#define REG_TRIS   TRIS(A,3)
 
 void convert(int an_chan);
 //3.5V : 0.5V   25.6  179
@@ -67,7 +69,22 @@ CHECK_RESULT opamp_check(int mode){
 }
 
 CHECK_RESULT reg_check(int mode){
-    
+    ADCON1bits.PCFG = 0b1100;       //AN0~3がアナログ入力
+    ADCON0bits.ADON = 1;        //A/Dコンバータを有効
+    ADCON2bits.ADFM = 0;        //右詰めで、上位8ビットのみを使う
+    ADCON2bits.ACQT = 0;        //GOを1にしたときに変換開始
+    REG_CHANGE = 0;
+    /* 変換開始、終了まで待つ */
+    convert(2);
+    if(ADRESH <= 50 || ADRESH >= 200){
+        return NG;
+    }
+    REG_CHANGE = 1;
+    __delay_ms(1);
+    if(ADRESH <= 50 || ADRESH >= 200){
+        return NG;
+    } else 
+        return OK;
 }
 
 

@@ -11,26 +11,28 @@
 #include "fucntions.h"
 #include "lcdlib_xc8_v03.h"
 
-#define Q_PORT PORTA
-#define Q_LAT  LATA
-#define Q_TRIS TRISA
+#define Q_PORT PORTD
+#define Q_LAT  LATD
+#define Q_TRIS TRISD
 
 /* 74393‚Ìo—ÍQ0?3‚ð0?3”Ôƒ|[ƒg‚ÉA2‚Â–Ú‚ÌQ0?3‚ð4?8”Ôƒ|[ƒg‚ÉÚ‘± */
 
-#define DFF_CL1 LAT(A,0)
-#define DFF_PR1 LAT(A,1)
-#define DFF_Q1  P(A,2)
-#define DFF_nQ1 P(A,3)
-#define DFF_CL2 LAT(A,4)
-#define DFF_PR2 LAT(A,5)
-#define DFF_Q2  P(A,6)
-#define DFF_nQ2 P(A,7)
+#define DFF_CL1 LAT(D,0)
+#define DFF_PR1 LAT(D,1)
+#define DFF_Q1  P(D,2)
+#define DFF_nQ1 P(D,3)
+#define DFF_nQ2 P(D,4)
+#define DFF_Q2  P(D,5)
+#define DFF_PR2 LAT(D,6)
+#define DFF_CL2 LAT(D,7)
 
-#define DFF_COMD LATBbits.LATB0
-#define DFF_COMCLR LATBbits.LATB1
-#define COMD_TRIS TRISBbits.TRISB0
-#define COMCLR_TRIS TRISBbits.TRISB1
 
+
+#define DFF_COMCLR LAT(C,0)
+#define DFF_COMD   LAT(C,1)
+
+#define COMCLR_TRIS TRIS(C,0)
+#define COMD_TRIS TRIS(C,1)
 
 #define CO_CLR DFF_COMD
 #define CO_CLK DFF_COMCLR
@@ -49,7 +51,7 @@ extern unsigned char bitPattern[8]; //“Y‚¦Žš‚Ì”‚Ìƒrƒbƒg‚Ì‚Ý‚ª1‚É‚È‚Á‚½ƒf[ƒ^”z—
  */
 CHECK_RESULT dff_Check(int mode){
         LCD_Clear();
-        Q_TRIS = 0b11001100;
+        Q_TRIS = 0b00111100;
         COMD_TRIS = 0;
         COMCLR_TRIS = 0;
         LATB = 0;
@@ -124,7 +126,11 @@ int num_check(int value){
     if(value != (Q_PORT & 0x0f)){
         return 0;
     } 
-    if(value != (Q_PORT & 0xf0) >> 4){
+    unsigned char num = P(D,7) ? 1 : 0;
+    if(P(D,6)) num |= 2;
+    if(P(D,5)) num |= 4;
+    if(P(D,4)) num |= 8;
+    if(value != num){
         return 0;
     }
     LCD_Number(Q_PORT);

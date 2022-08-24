@@ -78,9 +78,7 @@
 #include "datas.h"
 
 
-#define LED_BLUE LATAbits.LA0
-#define LED_RED LATAbits.LA1
-#define LED_GREEN LATAbits.LA2
+
 
 _Bool stop = 0;
 _Bool t0_flg = 0;   //1msごと、タイマ0の割り込みが起きたときに1になるフラグ
@@ -94,11 +92,12 @@ static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
 static const char allow = 0x7e;   //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
-    "74LS74 ",
+    "LM358",
     "74LS00 ",
     "74LS02 ",
     "LM555 ",
     "74LS393",
+    "74LS74 ",
     "74LS195"
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
@@ -112,10 +111,8 @@ const char* mode_names[] = {    //チェックするモードを表示する文字列
     " ﾀﾝﾀｲﾁｪｯｸ"
 };
 
-//CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
-CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
+
 char st[2][17] = {0};                   //LCDに表示する文字列
-int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 MODE now_mode = HOME;                   //現在の動作モード
 int select_item = -1;                   //単体チェックでチェックする項目(-1)は選択なし
 
@@ -135,8 +132,8 @@ void main() {
     
     LATBbits.LATB0 = 1;
     
-    //usart_init();
-   // comp_init();
+    usart_init();
+    comp_init();
     
     
     SW_TRIS = 0; 
@@ -157,67 +154,23 @@ void main() {
     LCD_Init();
     LCD_String("start\n");
     LCD_CursorOff();
+    com_check(0);
+    LED_RED = 0;
+    LED_GREEN = 0;
+    LED_BLUE = 0;
     while(1){
+        
         /* 現在のモードに合わせて関数を呼び出し */
         switch(now_mode){
             case HOME : menu_mode(); break;
             case CHECK_SELECT : select_check(); break;
             case SINGLE_TEST:  LCD_String(ic_names[select_item]); single_check(select_item); break;
             case ALL_CHECK : all_check(); break;
+            case ALL_RESULT : all_results(); break;
             default : break;
         }
-       /* if(count_check() == OK){
-            LATBbits.LATB3 = 1;
-            LCD_String("OK");
-            
-        } else{
-            LATBbits.LATB3 = 0;
-            LCD_String("NG");
-        }*/
     }
     
-       /**  実装予定のコード
-    *  TRISA = 0x00; 
-    TRISB = 0x00;
-    LATA = 0b00001001;    
-    
-    ///　測定中は黄色に点灯
-    LED_RED = 0;
-    LED_GREEN = 0;
-    LED_BLUE = 1;
-    
-    results[0] = dff_Check();
-    results[1] = nand_check(0);
-    
-    results[2] = NG;
-    results[3] = NG;
-    results[1] = NG;
-
-    ///　エラー項目があれば赤色に点灯
-    if(ng_count > 0){
-        LED_RED = 0;
-        LED_BLUE = 1;
-        LED_GREEN = 1;
-    } else {        ///OKならば緑色に点灯
-        LED_GREEN = 0;
-        LED_BLUE = 1;
-        LED_RED = 1;
-    }
-        NGの数を数えて、NG項目をLCDに表示する。
-    for(int i = 0;i < 10;i++){
-        if(results[i] != OK){
-            switch(ng_count){
-                case 0 : LCD_String(ic_names[i]);
-                    LCD_String("\n"); break;
-                case 1 : LCD_String(ic_names[i]); break;
-                case 2 : LCD_Locate(1,15); LCD_Character(0x7e); break;  //NG項目が3つ以上の時は、矢印を出してスクロールさせる
-                default : break;
-            }
-            ng_count++;
-        }
-    }
-    */
-
     return;
 }
 
@@ -255,53 +208,55 @@ void menu_mode(){
     }
 }
 
+
+
+void view_names(int cur){
+    if(cur < ic_kinds - 1){
+        LCD_Character(dot);
+        LCD_String(ic_names[cur]);
+        LCD_String("\n ");
+        LCD_String(ic_names[cur + 1]);
+        if(cur < ic_kinds - 2){
+            LCD_Locate(1,15);
+                LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
+        }
+                /* 最終項目では、下の段を選択 */
+    } else if(cur == ic_kinds - 1){
+        LCD_Character(blank);
+        LCD_String(ic_names[cur - 1]);
+        LCD_String("\n");
+        LCD_Character(dot);
+        LCD_String(ic_names[cur]);
+    } else {
+        cur = 0;
+        LCD_Character(dot);
+        LCD_String(ic_names[0]);
+        LCD_String("\n ");
+        LCD_String(ic_names[1]);
+        LCD_Locate(1,15);
+        LCD_Character(allow); 
+    }    
+}
+
+
+
 /* 単体チェックモードで、チェックする項目を決める */
 void select_check(){
     LCD_Clear();
     static unsigned int cur = 0;
-    /* 最初の0,1個めを表示する */
-    LCD_Character(dot);
-    LCD_String(ic_names[cur]);
-    LCD_String("\n ");
-    LCD_String(ic_names[cur + 1]);
-    LCD_Locate(1,15);
-    LCD_Character(allow); 
+    view_names(cur);
     
     while(now_mode == CHECK_SELECT){
         T0_WAIT;
         sw_check();
-        if(sw1_flg != 0){
+        if(sw1_flg != 0){  //スイッチ1が押されたら
             LCD_Clear();
             sw1_flg = 0;
-            cur++;
-            
-            /* 項目を1つずらして表示 */
-            if(cur < ic_kinds - 1){
-                LCD_Character(dot);
-                LCD_String(ic_names[cur]);
-                LCD_String("\n ");
-                LCD_String(ic_names[cur + 1]);
-                if(cur < ic_kinds - 2){
-                    LCD_Locate(1,15);
-                    LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
-                }
-                /* 最終項目では、下の段を選択 */
-            } else if(cur == ic_kinds - 1){
-                LCD_Character(blank);
-                LCD_String(ic_names[cur - 1]);
-                LCD_String("\n");
-                LCD_Character(dot);
-                LCD_String(ic_names[cur]);
-            } else {
+            if(++cur >= ic_kinds){
                 cur = 0;
-                LCD_Character(dot);
-                LCD_String(ic_names[0]);
-                LCD_String("\n ");
-                LCD_String(ic_names[1]);
-                LCD_Locate(1,15);
-                LCD_Character(allow); 
             }
-        }   //スイッチ1が押されたら
+            view_names(cur);/* 項目を1つずらして表示 */
+        } 
         
         /* スイッチ2が押されたら、現在選択されている項目をチェック */
         if(sw2_flg != 0){
@@ -314,7 +269,9 @@ void select_check(){
     }
 }
 
+
 void __interrupt ( ) isr (void){
+    static int blink_cnt = 0;
     if(PIR2bits.CMIF != 0){ //コンパレータの出力が変化した割り込み。
         PIR2bits.CMIF = 0;
         if(CMCONbits.C1OUT != 0){       //C1の出力が基準電圧を超えた→過電流
@@ -329,7 +286,6 @@ void __interrupt ( ) isr (void){
         PIR1bits.RCIF = 0;
         rx_buf = RCREG;
         LCD_Number(RCREG);
-
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){
@@ -337,11 +293,15 @@ void __interrupt ( ) isr (void){
         TMR0H = (65035 >> 8);
         TMR0L = (65035 & 0xff);
         t0_flg = 1;
+        if((now_mode == SINGLE_TEST || now_mode == ALL_CHECK) && ++blink_cnt == 250){
+            LED_RED = ~LED_RED;
+            LED_GREEN = ~LED_GREEN;
+            LED_BLUE = 1;
+            blink_cnt = 0;
+        }
     }
     if(INTCONbits.INT0IF != 0){
         INTCONbits.INT0IF = 0;
-        TRIS(C,3) = 0;
-        LAT(C,3) = ~LAT(C,3);
         mode_change();
     }
 }

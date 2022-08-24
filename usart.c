@@ -20,10 +20,6 @@ void usart_init(){
 
 void req_check(int kind){
     
-    TXREG = 0x01;
-    while(1){;}
-    
-    
 }
 
 void echo(){

@@ -15,10 +15,14 @@
 #define SW1 P(B,2)
 #define SW1_TRIS TRIS(B,2)
 #define SW2 P(B,7)
-#define SW2_TRIS TRIS(A,7)
+#define SW2_TRIS TRIS(B,7)
 
-#define POWER_SW LAT(B,1)     //チェック項目へ流す電源を接続するスイッチ
-#define SW_TRIS  TRIS(B,1)   //電源制御リレー
+#define LED_BLUE  LAT(B,3)
+#define LED_RED   LAT(B,4)
+#define LED_GREEN LAT(B,5)
+
+#define POWER_SW LAT(A,3)     //チェック項目へ流す電源を接続するスイッチ
+#define SW_TRIS  TRIS(A,3)   //電源制御リレー
 
 #define CLOCK(a)  a = 1; __delay_ms(PLUS_TIME); a = 0;
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
@@ -67,6 +71,9 @@ CHECK_RESULT TMchecker(int mode);
 CHECK_RESULT opamp_check(int mode);
 CHECK_RESULT seg7_decode(int mode);
 CHECK_RESULT count2_check(int mode);
+CHECK_RESULT com_check(int mode);
+CHECK_RESULT reg_check(int mode);
+CHECK_RESULT seg7_check(int mode);
 
 //void clock(PORT_NUM portnumber,int bitNum);
 //void downClock(PORT_NUM portnumber,int bitNum);
@@ -82,6 +89,7 @@ void comp_init(void);
 void cancel(void);
 void mode_change(void);
 void all_check(void);
-
+void all_results(void);
+void convert(int an_chan);
 
 #endif	/* XC_HEADER_TEMPLATE_H */

@@ -11,7 +11,10 @@
 
 extern const int ic_kinds;
 int is_info[] = {0};
+//CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
+CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
 
+int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 /* スイッチ1，2を監視して、新たに押されたらフラグを立てる */
 void sw_check(){
     static int count1 = 0;
@@ -94,12 +97,13 @@ void current_over(){
     SW_TRIS = 0;
     POWER_SW = 0;
     LCD_String("ｶﾃﾞﾝﾘｭｳｦｹﾝｼｭﾂ\nｾﾂｿﾞｸｦｶｸﾆﾝｼﾃ ﾘｾｯﾄ");
-    TRISAbits.TRISA2 = 0;
     
-    LATB = 0;
+    LED_BLUE = 1;
+    LED_GREEN = 1;
+    LED_RED = 0;
     while(1){       //他のプログラムへは移行しない
         __delay_ms(125);
-        LATAbits.LA2 = ~LATAbits.LA2;   //赤色LEDを点滅
+        LED_RED = ~LED_RED;   //赤色LEDを点滅
     }
 }
 
@@ -127,6 +131,53 @@ void all_check(){
     LCD_Clear();
     LCD_String("ﾁｪｯｸﾁｭｳ...");
     TXREG = 0xff;
-    
+    results[3] = NG;
+    results[2] = NG;
+    results[1] = NG;
+    results[0] = opamp_check(0);
     TXREG = 0xfe;
+    now_mode = ALL_RESULT;
+    return;
 }
+
+void all_results(){
+    int cur = -1;
+    int index = 0;
+    for(int i = 0;i < 10;i++){
+        if(results[i] != OK){
+            if(ng_count == 0){
+                LCD_String("ｹｯﾃｲ : ﾀﾝﾀｲﾁｪｯｸ\n");
+                LCD_String(ic_names[i]);
+            } else if(ng_count == 1){
+                LCD_Locate(1,15); LCD_Character(0x7e);
+            }
+            ng_count++;
+        }
+    }
+    while(now_mode == ALL_RESULT){
+        T0_WAIT;
+        sw_check();
+        if(sw1_flg != 0 && ng_count >= 2){
+            sw1_flg = 0;
+            /*            
+             * if(cur < ng_count - 1){
+                LCD_Character(dot);
+                LCD_String(ic_names[cur]);
+                LCD_String("\n ");
+                LCD_String(ic_names[cur + 1]);
+                if(cur < ic_kinds - 2){
+                    LCD_Locate(1,15);
+                    LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
+                }
+                
+            } else if(cur == ic_kinds - 1){
+                LCD_Character(blank);
+                LCD_String(ic_names[cur - 1]);
+                LCD_String("\n");
+                LCD_Character(dot);
+                LCD_String(ic_names[cur]);*/
+        }
+        
+    }
+}
+

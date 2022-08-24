@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include "datas.h"
 
-#define TM_OUT P(B,3)
-#define TM_OUT_TRIS TRIS(B,3)
-#define TM_SELECT LAT(B,4)
-#define TM_SL_TRIS TRIS(B,4)
+#define TM_OUT P(A,7)
+#define TM_OUT_TRIS TRIS(A,7)
+#define TM_SELECT LAT(A,6)
+#define TM_SL_TRIS TRIS(A,6)
 
 
 /**
