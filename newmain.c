@@ -92,6 +92,8 @@ static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
 static const char allow = 0x7e;   //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
+    "74LS4511",
+    "74LS191",
     "LM358",
     "74LS00 ",
     "74LS02 ",
@@ -103,7 +105,7 @@ const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
 CHECK_RESULT (*check_funcs[])(int) = {
-    dff_Check, nand_check, count_check, TMchecker, nor_check
+    seg7_decode,count2_check,dff_Check, nand_check, count_check, TMchecker, nor_check
 };
 
 const char* mode_names[] = {    //チェックするモードを表示する文字列
@@ -132,12 +134,11 @@ void main() {
     
     LATBbits.LATB0 = 1;
     
-    usart_init();
-    comp_init();
+    //usart_init();
+    //comp_init();
     
     
-    SW_TRIS = 0; 
-    POWER_SW = 1;   //電源リレーをオンにして電源を供給
+    
     
     /* 1msごとのタイマ割り込みを設定 */
     T0CON = 0b10000000;
@@ -150,14 +151,13 @@ void main() {
     
     SW2_TRIS = 1;
     SW1_TRIS = 1;
-    __delay_ms(10);
     LCD_Init();
-    LCD_String("start\n");
     LCD_CursorOff();
-    com_check(0);
     LED_RED = 0;
     LED_GREEN = 0;
     LED_BLUE = 0;
+    SW_TRIS = 0; 
+    POWER_SW = 1;   //電源リレーをオンにして電源を供給
     while(1){
         
         /* 現在のモードに合わせて関数を呼び出し */
@@ -275,7 +275,7 @@ void __interrupt ( ) isr (void){
     if(PIR2bits.CMIF != 0){ //コンパレータの出力が変化した割り込み。
         PIR2bits.CMIF = 0;
         if(CMCONbits.C1OUT != 0){       //C1の出力が基準電圧を超えた→過電流
-            POWER_SW = 0;               //電源を停止
+            //POWER_SW = 0;               //電源を停止
             current_over();
             stop = 1;                  
         }

@@ -59,8 +59,8 @@ void single_check(int kind){
     //result = check_funcs[kind]();
     /* 選択されたICを単体チェックして、結果を変数に格納 */
     switch(kind){
-        case 0 : result = opamp_check(1); break;
-        case 1 : result = nand_check(1);    break;
+        case 0 : result = seg7_decode(1); break;
+        case 1 : result = count2_check(1);    break;
         case 2 : result = nor_check(1);   break;
         default : result = ERROR;   break;
     }

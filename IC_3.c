@@ -59,6 +59,7 @@ CHECK_RESULT count2_check(int mode){
     //出力を0で初期化
     num_input(0);       
     DOWN_CLOCK(LOAD);
+    D_U = 0;  
     /* カウントアップで、値が0→15まで変化することを確かめる */
     for(int i = 0;i < 16;i++){
         if(!value_check(i)){    //値が違っていたら検査終了
@@ -145,6 +146,7 @@ int value_check(int value){
     __delay_ms(300);
     if(MAX_MIN != 0) LCD_String("MAX/MIN");
     if(R_CK == 0)  LCD_String("RCO");
+    
     if(value == 0){
         return (data == value) && (MAX_MIN == D_U) && (R_CK != D_U);
     } else if(value == 15){
@@ -152,7 +154,6 @@ int value_check(int value){
     } else {
         return (data == value) && (MAX_MIN == 0) && (R_CK != 0);
     }
-    
 }
 
 void num_input(int value){
