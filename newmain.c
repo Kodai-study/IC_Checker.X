@@ -131,7 +131,9 @@ void main() {
     LATA = 0b10101010;
     ADCON1 = 0x0f;      //全てディジタルピンに設定
     
-    usart_init();
+    
+    
+    
     //comp_init();
     
     /* 1msごとのタイマ割り込みを設定 */
@@ -150,11 +152,19 @@ void main() {
     LED_RED = 0;
     LED_GREEN = 0;
     LED_BLUE = 0;
+    
     SW_TRIS = 0; 
     POWER_SW = 1;   //電源リレーをオンにして電源を供給
+    
+    __delay_ms(50);
+    
+    usart_init();
+    
+    
+    
     while(1){
         
-        /* 現在のモードに合わせて関数を呼び出し */
+        /* 現在のモードに合わせて関数を呼び出し 
         switch(now_mode){
             case HOME :  LED_BLUE = 0;LED_GREEN = 0;LED_RED = 0; menu_mode(); break;
             case CHECK_SELECT : LED_BLUE = 0;LED_GREEN = 0;LED_RED = 1; select_check(); break;
@@ -162,7 +172,9 @@ void main() {
             case ALL_CHECK : LED_BLUE = 1;LED_GREEN = 0;LED_RED = 0; all_check(); break;
             case ALL_RESULT : all_results(); break;
             default : break;
-        }
+        }*/
+        TXREG = ++select_item;
+        __delay_ms(1000);
     }
     
     return;
