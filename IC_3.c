@@ -62,6 +62,7 @@ CHECK_RESULT count2_check(int mode){
     D_U = 0;  
     /* カウントアップで、値が0→15まで変化することを確かめる */
     for(int i = 0;i < 16;i++){
+        CANCEL_CHECK;
         if(!value_check(i)){    //値が違っていたら検査終了
             return NG;
         }
@@ -75,6 +76,7 @@ CHECK_RESULT count2_check(int mode){
     D_U = 1;        //カウントダウンモードに
     CLOCK(CLK);
     for(int i = 15;i >= 0;i--){ //値が15?0に変化する
+        CANCEL_CHECK;
         if(!value_check(i)){
            return NG;
         }

@@ -17,9 +17,11 @@
 #define SW2 P(B,7)
 #define SW2_TRIS TRIS(B,7)
 
-#define LED_BLUE  LAT(B,3)
-#define LED_RED   LAT(B,4)
+#define LED_RED   LAT(B,3)
 #define LED_GREEN LAT(B,5)
+#define LED_BLUE  LAT(B,4)
+
+
 
 #define POWER_SW LAT(A,3)     //チェック項目へ流す電源を接続するスイッチ
 #define SW_TRIS  TRIS(A,3)   //電源制御リレー
@@ -27,6 +29,7 @@
 #define CLOCK(a)  a = 1; __delay_ms(PLUS_TIME); a = 0;
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
 #define T0_WAIT while(t0_flg == 0) {;} t0_flg = 0;
+#define CANCEL_CHECK if(now_mode != SINGLE_TEST && now_mode != ALL_CHECK) return NO_CHECK;
 
 typedef enum _now_mode{
     HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST
@@ -35,16 +38,6 @@ typedef enum _now_mode{
 typedef enum __checkstats{
     NO_CHECK, OK, NG, NOTFOUND, ERROR
 }CHECK_RESULT;
-
-
-/*typedef enum __portnumber{
-    A,
-    B,
-    C,
-    D,
-    E
-}PORT_NUM;*/
-
 
 
 unsigned char bitPattern[8] = {
@@ -60,6 +53,7 @@ extern int mode;
 extern MODE now_mode;
 extern const char* ic_names[];
 extern int select_item;
+extern char rx_buf;
 extern CHECK_RESULT (*check_funcs[])(int);
 extern CHECK_RESULT results[];
 
@@ -75,10 +69,7 @@ CHECK_RESULT com_check(int mode);
 CHECK_RESULT reg_check(int mode);
 CHECK_RESULT seg7_check(int mode);
 
-//void clock(PORT_NUM portnumber,int bitNum);
-//void downClock(PORT_NUM portnumber,int bitNum);
 
-void viewResults();
 void usart_init();
 void sw_check(void);
 void single_check(int kind);

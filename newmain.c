@@ -94,19 +94,18 @@ static const char allow = 0x7e;   //右矢印〃
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     "74LS4511",
     "74LS191",
-    "LM358",
-    "74LS00 ",
-    "74LS02 ",
+    "3ﾀﾝｼﾚｷﾞｭﾚｰﾀ",
     "LM555 ",
+    "7ｾｸﾞﾒﾝﾄLED",
+    "LM358",
+    "74LS00",
+    "74LS74",
+    "LM393",
+    "74LS02 ",
     "74LS393",
-    "74LS74 ",
-    "74LS195"
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
-CHECK_RESULT (*check_funcs[])(int) = {
-    seg7_decode,count2_check,dff_Check, nand_check, count_check, TMchecker, nor_check
-};
 
 const char* mode_names[] = {    //チェックするモードを表示する文字列
     " ALLﾁｪｯｸ",
@@ -127,18 +126,13 @@ void main() {
     
            
     TRISA = 0xff;
-    TRISB = 0x00;
+    TRISB = 0b11000101;
     LATB = 0x00;
     LATA = 0b10101010;
     ADCON1 = 0x0f;      //全てディジタルピンに設定
     
-    LATBbits.LATB0 = 1;
-    
-    //usart_init();
+    usart_init();
     //comp_init();
-    
-    
-    
     
     /* 1msごとのタイマ割り込みを設定 */
     T0CON = 0b10000000;
@@ -147,7 +141,7 @@ void main() {
     INTCONbits.T0IE = 1;
     
     INTCONbits.INT0E = 1;   //外部割込み
-    INTCON2bits.INTEDG0 = 0;    //立ちがりで割り込み
+    INTCON2bits.INTEDG0 = 0;    //立ち下がりで割り込み
     
     SW2_TRIS = 1;
     SW1_TRIS = 1;
@@ -162,10 +156,10 @@ void main() {
         
         /* 現在のモードに合わせて関数を呼び出し */
         switch(now_mode){
-            case HOME : menu_mode(); break;
-            case CHECK_SELECT : select_check(); break;
-            case SINGLE_TEST:  LCD_String(ic_names[select_item]); single_check(select_item); break;
-            case ALL_CHECK : all_check(); break;
+            case HOME :  LED_BLUE = 0;LED_GREEN = 0;LED_RED = 0; menu_mode(); break;
+            case CHECK_SELECT : LED_BLUE = 0;LED_GREEN = 0;LED_RED = 1; select_check(); break;
+            case SINGLE_TEST : LED_BLUE = 1;LED_GREEN = 0;LED_RED = 0;  LCD_String(ic_names[select_item]); single_check(select_item); break;
+            case ALL_CHECK : LED_BLUE = 1;LED_GREEN = 0;LED_RED = 0; all_check(); break;
             case ALL_RESULT : all_results(); break;
             default : break;
         }
@@ -284,8 +278,8 @@ void __interrupt ( ) isr (void){
     /* USARTで値を受け取ったとき */
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
-        rx_buf = RCREG;
         LCD_Number(RCREG);
+        rx_buf = RCREG;
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){
@@ -295,7 +289,7 @@ void __interrupt ( ) isr (void){
         t0_flg = 1;
         if((now_mode == SINGLE_TEST || now_mode == ALL_CHECK) && ++blink_cnt == 250){
             LED_RED = ~LED_RED;
-            LED_GREEN = ~LED_GREEN;
+            LED_GREEN = LED_RED;
             LED_BLUE = 1;
             blink_cnt = 0;
         }

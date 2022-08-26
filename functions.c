@@ -53,26 +53,60 @@ void sw_check(){
 void single_check(int kind){
     CHECK_RESULT result = NO_CHECK;
     LCD_Clear();
-    LCD_String(ic_names[select_item]);
-    LCD_String(" : \nchecking...");
+    if(kind == 2){
+        LCD_String("3ﾀﾝｼREG"); 
+    } else if(kind == 4){
+        LCD_String("7ｾｸﾞLED"); 
+    } else{
+        LCD_String(ic_names[kind]);
+    }
+    LCD_String(" check...\n");
     LCD_CursorOn();
     //result = check_funcs[kind]();
     /* 選択されたICを単体チェックして、結果を変数に格納 */
+    if(kind > 10){
+        LCD_String("ERROR...");
+        return ;
+    }
     switch(kind){
         case 0 : result = seg7_decode(1); break;
         case 1 : result = count2_check(1);    break;
-        case 2 : result = nor_check(1);   break;
-        default : result = ERROR;   break;
+        case 2 : result = reg_check(1);   break;
+        
+        default : TXREG = kind; while(rx_buf == 0) {;}
+                    if((rx_buf >> 4) == kind) {
+                        result = rx_buf & 0x0f;
+                    } else {
+                        rx_buf = 0;
+                        TXREG = 0xfe;
+                        while(rx_buf == 0) {
+                            if(now_mode != SINGLE_TEST){
+                                return;
+                            }
+                        }
+                        if((rx_buf >> 4) == kind) {
+                            result = rx_buf & 0x0f;
+                        } else {
+                            LCD_String("ERROR...");
+                            return ;
+                        }
+                    }
+                rx_buf = 0;
+        break;
     }
+    
     LCD_CursorOff();
     /* チェックの結果を表示 */
     switch(result){
-        case OK : LCD_Locate(1,0); LCD_String("OK!!!       ");  break;      //OKならば2行目にOKを表示
+        case OK : LED_BLUE = 1; LED_GREEN = 0;LED_RED = 1; 
+            LCD_Locate(1,0); LCD_String("OK!!!       ");  break;      //OKならば2行目にOKを表示
         case NG : LCD_Clear(); LCD_String(ic_names[select_item]);
+            LED_BLUE = 1; LED_GREEN = 1;LED_RED = 0; 
             LCD_String(" : NG!!\nｹｯﾃｲ : ｻｲｼｹﾝ");  break;             //NGなら、2行目に次の指示を表示
         case ERROR : LCD_Locate(1,0);  LCD_String("ERROR...");  break;
-        default : break;
+        default : return;
     }
+    if(now_mode != SINGLE_TEST)     return;
     now_mode = SINGLE_RESULT;
     while(now_mode == SINGLE_RESULT){
         T0_WAIT;
@@ -120,9 +154,10 @@ void mode_change(){
     switch(now_mode){
         case ALL_CHECK    : cancel();
         case CHECK_SELECT :                 // 全体チェック、選択画面、全体チェックの時はホーム画面に戻る
-        case ALL_RESULT   : now_mode = HOME; break; 
+        case ALL_RESULT   : now_mode = HOME; LCD_Clear(); break;
+               
         case SINGLE_TEST  : cancel();
-        case SINGLE_RESULT: now_mode = CHECK_SELECT; break; //単体テスト中、単体テストの結果表示の時は項目選択画面に戻る
+        case SINGLE_RESULT: now_mode = CHECK_SELECT; LCD_Clear();break; //単体テスト中、単体テストの結果表示の時は項目選択画面に戻る
         default : break;
     }
 }
@@ -134,7 +169,7 @@ void all_check(){
     results[3] = NG;
     results[2] = NG;
     results[1] = NG;
-    results[0] = opamp_check(0);
+    results[0] = OK;
     TXREG = 0xfe;
     now_mode = ALL_RESULT;
     return;
@@ -159,25 +194,22 @@ void all_results(){
         sw_check();
         if(sw1_flg != 0 && ng_count >= 2){
             sw1_flg = 0;
-            /*            
-             * if(cur < ng_count - 1){
-                LCD_Character(dot);
-                LCD_String(ic_names[cur]);
-                LCD_String("\n ");
-                LCD_String(ic_names[cur + 1]);
-                if(cur < ic_kinds - 2){
-                    LCD_Locate(1,15);
-                    LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
-                }
-                
-            } else if(cur == ic_kinds - 1){
-                LCD_Character(blank);
-                LCD_String(ic_names[cur - 1]);
-                LCD_String("\n");
-                LCD_Character(dot);
-                LCD_String(ic_names[cur]);*/
         }
         
     }
 }
 
+void comp_init(void) {
+    ADCON1 = 0x0d;
+    TRISAbits.RA0 = 1;
+    TRISAbits.RA1 = 1;
+    CVRCON = 0;
+    CMCON = 0;
+    CVRCONbits.CVR = 0b1000;
+    CVRCONbits.CVREN = 1;
+    CMCONbits.CIS = 0;      //RA0,1をコンパレータの入力にする
+    CMCONbits.C1INV = 1;    //C1OUTの値を反転(CINのほうが大きい時にCOUT=1)
+    
+    PIE2bits.CMIE = 1;      //COUTの値が変わったときに割り込み
+    CMCONbits.CM = 0b110;
+}

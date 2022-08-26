@@ -38,6 +38,8 @@ CHECK_RESULT reg_check(int mode){
     R_CHANGE = 1;
     convert(1);
     CHECK_VOLT;
+    __delay_ms(500);
+    CANCEL_CHECK;
     
     V_SOURCE = 0;
     R_CHANGE = 1;
@@ -46,16 +48,22 @@ CHECK_RESULT reg_check(int mode){
     R_CHANGE = 1;
     convert(1);
     CHECK_VOLT;
+    __delay_ms(500);
+    CANCEL_CHECK;
     
     V_SOURCE = 1;
     R_CHANGE = 0;
     convert(1);
     CHECK_VOLT;
     __delay_ms(1);
+    __delay_ms(500);
+    CANCEL_CHECK;
     
     R_CHANGE = 1;
     CHECK_VOLT;
     R_CHANGE = 0;
     V_SOURCE = 0;
+    __delay_ms(500);
+    CANCEL_CHECK;
     return OK;
 }
