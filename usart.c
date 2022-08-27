@@ -18,10 +18,6 @@ void usart_init(){
     PIE1bits.RCIE = 1;
 }
 
-void req_check(int kind){
-    
-}
-
-void echo(){
+void dff_info(){
     
 }

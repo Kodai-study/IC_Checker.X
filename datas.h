@@ -30,6 +30,7 @@
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
 #define T0_WAIT while(t0_flg == 0) {;} t0_flg = 0;
 #define CANCEL_CHECK if(now_mode != SINGLE_TEST && now_mode != ALL_CHECK) return NO_CHECK;
+#define WAIT_RECEIVE(mode) rx_buf = 0; while(rx_buf == 0) { if(now_mode != mode) return; }
 
 typedef enum _now_mode{
     HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST

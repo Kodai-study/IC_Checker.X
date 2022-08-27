@@ -77,9 +77,6 @@
 #include "fucntions.h"
 #include "datas.h"
 
-
-
-
 _Bool stop = 0;
 _Bool t0_flg = 0;   //1msごと、タイマ0の割り込みが起きたときに1になるフラグ
 _Bool sw1_flg = 0;  //スイッチ1が押された時に1になる
@@ -87,9 +84,6 @@ _Bool sw2_flg = 0;  //スイッチ2が押されたときに1になる
 int hoge_count = 0;
 char rx_buf = 0;    //USARTで受け取った値を保存
 int mode = 1;       
-static const char dot = 0xa5;     //LCDで、選択項目を表すドットの文字コード
-static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
-static const char allow = 0x7e;   //右矢印〃
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
     "74LS4511",
@@ -106,12 +100,10 @@ const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
-
 const char* mode_names[] = {    //チェックするモードを表示する文字列
     " ALLﾁｪｯｸ",
     " ﾀﾝﾀｲﾁｪｯｸ"
 };
-
 
 char st[2][17] = {0};                   //LCDに表示する文字列
 MODE now_mode = HOME;                   //現在の動作モード
@@ -124,15 +116,11 @@ void main() {
     INTCONbits.GIE = 1;
     INTCONbits.PEIE = 1;
     
-           
     TRISA = 0xff;
     TRISB = 0b11000101;
     LATB = 0x00;
     LATA = 0b10101010;
     ADCON1 = 0x0f;      //全てディジタルピンに設定
-    
-    
-    
     
     //comp_init();
     
@@ -155,12 +143,9 @@ void main() {
     
     SW_TRIS = 0; 
     POWER_SW = 1;   //電源リレーをオンにして電源を供給
-    
     __delay_ms(50);
     
     usart_init();
-    
-    
     
     while(1){
         
@@ -174,74 +159,8 @@ void main() {
             default : break;
         }
     }
-    
     return;
 }
-
-/* 単体チェックか、全てをチェックするかを選択する */
-void menu_mode(){
-    LCD_Clear();        
-    static unsigned int cur = 0;     //選択モードがどちらかを格納
-    SW1_TRIS = 1;           
-    SW2_TRIS = 1;
-    
-    /* 初期は全てチェックモード */       
-    LCD_String(mode_names[0]);
-    LCD_String("\n");
-    LCD_String(mode_names[1]);
-    LCD_Locate(cur,0);
-    LCD_Character(dot);
-    while(now_mode == HOME){
-        T0_WAIT
-        sw_check();     //1msごとに、スイッチが押されたかどうかチェック
-        /* スイッチ1が押されたら、選択モードを変更 */
-        if(sw1_flg != 0){       
-            sw1_flg = 0;
-            LCD_Locate(cur,0);
-            LCD_Character(blank);
-            cur = !cur;
-            LCD_Locate(cur,0);
-            LCD_Character(dot);
-        }
-        /* スイッチ2が押されたら、選択されたモードに移行 */
-        if(sw2_flg != 0){
-            sw2_flg = 0;
-            now_mode = (cur == 0) ? ALL_CHECK : CHECK_SELECT;
-            return;
-        }
-    }
-}
-
-
-
-void view_names(int cur){
-    if(cur < ic_kinds - 1){
-        LCD_Character(dot);
-        LCD_String(ic_names[cur]);
-        LCD_String("\n ");
-        LCD_String(ic_names[cur + 1]);
-        if(cur < ic_kinds - 2){
-            LCD_Locate(1,15);
-                LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
-        }
-                /* 最終項目では、下の段を選択 */
-    } else if(cur == ic_kinds - 1){
-        LCD_Character(blank);
-        LCD_String(ic_names[cur - 1]);
-        LCD_String("\n");
-        LCD_Character(dot);
-        LCD_String(ic_names[cur]);
-    } else {
-        cur = 0;
-        LCD_Character(dot);
-        LCD_String(ic_names[0]);
-        LCD_String("\n ");
-        LCD_String(ic_names[1]);
-        LCD_Locate(1,15);
-        LCD_Character(allow); 
-    }    
-}
-
 
 
 /* 単体チェックモードで、チェックする項目を決める */
@@ -269,7 +188,6 @@ void select_check(){
             now_mode = SINGLE_TEST; //選択項目を現在のカーソルにして、単体チェックモードに移行
             return;
         }
-        
     }
 }
 

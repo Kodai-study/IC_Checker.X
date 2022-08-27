@@ -12,7 +12,11 @@
 extern const int ic_kinds;
 int is_info[] = {0};
 //CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
-CHECK_RESULT results[10] = {OK,OK,OK,OK,OK,OK,OK,OK,OK,OK}; ///デバッグ用
+CHECK_RESULT results[11] = {NO_CHECK}; ///デバッグ用
+
+static const char dot = 0xa5;     //LCDで、選択項目を表すドットの文字コード
+static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
+static const char allow = 0x7e;   //右矢印〃
 
 int ng_count = 0;                       //チェックが失敗した項目の数をカウント
 /* スイッチ1，2を監視して、新たに押されたらフラグを立てる */
@@ -73,15 +77,15 @@ void single_check(int kind){
         case 1 : result = count2_check(1);    break;
         case 2 : result = reg_check(1);   break;
         
-        default : rx_buf = 0;  LCD_Number(kind); TXREG = kind; while(rx_buf == 0) {;}
-                   if((rx_buf >> 4) == kind) {
-                        result = rx_buf & 0x0f;
-                    } else { 
-                       result = ERROR;
-                    }
-                    
-                    LCD_HNumber(rx_buf,2);
-                    rx_buf = 0;  break;
+        default : rx_buf = 0;  LCD_Number(kind); TXREG = kind; 
+        WAIT_RECEIVE(SINGLE_TEST);
+           if((rx_buf >> 4) == kind) {
+                result = rx_buf & 0x0f;
+            } else { 
+               result = ERROR;
+            }
+            LCD_HNumber(rx_buf,2);
+            rx_buf = 0;  break;
     }
     
     LCD_CursorOff();
@@ -154,39 +158,200 @@ void mode_change(){
 void all_check(){
     LCD_Clear();
     LCD_String("ﾁｪｯｸﾁｭｳ...");
+    rx_buf = 0;
     TXREG = 0xff;
-    results[3] = NG;
-    results[2] = NG;
-    results[1] = NG;
-    results[0] = OK;
+    results[0] = seg7_decode(0);
+    results[2] = reg_check(0);
+    
+    WAIT_RECEIVE(ALL_CHECK);
+    
+    rx_buf = 0;
+    LCD_Clear();
+    if(rx_buf == 0xaa){
+        LCD_String("ICｦ ﾄﾘｶｴﾃｸﾀﾞｻｲ\nｹｯﾃｲ : ｽｽﾑ");
+        while(sw2_flg == 0){ T0_WAIT; sw_check();  }
+        LCD_Clear();
+        LCD_String("ﾁｪｯｸﾁｭｳ...");
+    } else {
+        LCD_String("ERROR...\nﾅﾆｶｷｰｦ ｵｼﾃｸﾀﾞｻｲ");
+        while(sw2_flg == 0 && sw1_flg == 0 && now_mode == ALL_CHECK) {
+            T0_WAIT; sw_check();  
+        }
+        sw2_flg = 0;
+        sw1_flg = 0;
+        now_mode = HOME;
+        return;
+    }
     TXREG = 0xfe;
+    results[1] = count2_check(0);
+    if(results[2] != OK){
+        results[2] = reg_check(0);
+    }
+    WAIT_RECEIVE(ALL_CHECK);
+    for(int i = 3; i <= 10;i++){
+        results[i] = (rx_buf & 0x01) ? OK : NG;
+        rx_buf >>= 1;
+    }
+    
     now_mode = ALL_RESULT;
     return;
 }
 
+int next(int index){
+    for(int i = index + 1;i <= 10;i++){
+        if(results[i] != OK){
+            return i;
+        }
+    }
+    for(int i = 0;i < index;i++){
+        if(results[i] != OK){
+            return i;
+        }
+    }
+    return -1;
+}
+
 void all_results(){
-    int cur = -1;
-    int index = 0;
-    for(int i = 0;i < 10;i++){
+    int cur = 0;
+    int index = -1;
+    for(int i = 0;i < 11;i++){
         if(results[i] != OK){
             if(ng_count == 0){
-                LCD_String("ｹｯﾃｲ : ﾀﾝﾀｲﾁｪｯｸ\n");
+                LCD_String("NGｲﾁﾗﾝ ｺｽｳ : \n");
+                LCD_Character(dot);
                 LCD_String(ic_names[i]);
             } else if(ng_count == 1){
-                LCD_Locate(1,15); LCD_Character(0x7e);
+                LCD_Locate(1,15); LCD_Character(allow);
             }
             ng_count++;
         }
     }
+    
+    if(ng_count == 0){
+        LCD_String("ALL_OK!!!!");
+        sw2_flg = 0;
+        sw1_flg = 0;
+        while(sw2_flg == 0 && sw1_flg == 0 && now_mode == ALL_CHECK) {
+            T0_WAIT; sw_check();  
+        }
+        sw2_flg = 0;
+        sw1_flg = 0;
+        now_mode = HOME;
+        return;
+    }
+    
+    LCD_Locate(0,13);
+    LCD_Number(ng_count);
+    LCD_Locate(1,0);
+    
     while(now_mode == ALL_RESULT){
         T0_WAIT;
         sw_check();
-        if(sw1_flg != 0 && ng_count >= 2){
-            sw1_flg = 0;
+        
+        if(sw2_flg != 0){
+            if(index == -1){
+                single_check(next(index));
+            } else {
+                single_check(index);
+            }
         }
+        
+        if(sw1_flg == 0 || ng_count == 1)
+            continue;
+        
+        if(++cur > ng_count){
+            cur = 1;
+        }
+        
+        if(cur < ng_count){
+            LCD_Clear();
+            sw1_flg = 0;
+            index = next(index);
+            LCD_Character(dot);
+            LCD_String(ic_names[index]);
+            LCD_String("\n ");
+            LCD_String(ic_names[next(index)]);
+            if(cur < ng_count - 1){
+                LCD_Locate(1,15);
+                LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
+            }
+                /* 最終項目では、下の段を選択 */
+        } else if(cur == ng_count){
+            index = next(index);
+            LCD_Locate(0,0);
+            LCD_Character(blank);
+            LCD_Locate(1,0);
+            LCD_Character(dot);
+        }
+        
+
         
     }
 }
+
+
+/* 単体チェックか、全てをチェックするかを選択する */
+void menu_mode(){
+    LCD_Clear();        
+    static unsigned int cur = 0;     //選択モードがどちらかを格納
+    SW1_TRIS = 1;           
+    SW2_TRIS = 1;
+    
+    /* 初期は全てチェックモード */       
+    LCD_String(mode_names[0]);
+    LCD_String("\n");
+    LCD_String(mode_names[1]);
+    LCD_Locate(cur,0);
+    LCD_Character(dot);
+    while(now_mode == HOME){
+        T0_WAIT
+        sw_check();     //1msごとに、スイッチが押されたかどうかチェック
+        /* スイッチ1が押されたら、選択モードを変更 */
+        if(sw1_flg != 0){       
+            sw1_flg = 0;
+            LCD_Locate(cur,0);
+            LCD_Character(blank);
+            cur = !cur;
+            LCD_Locate(cur,0);
+            LCD_Character(dot);
+        }
+        /* スイッチ2が押されたら、選択されたモードに移行 */
+        if(sw2_flg != 0){
+            sw2_flg = 0;
+            now_mode = (cur == 0) ? ALL_CHECK : CHECK_SELECT;
+            return;
+        }
+    }
+}
+
+void view_names(int cur){
+    if(cur < ic_kinds - 1){
+        LCD_Character(dot);
+        LCD_String(ic_names[cur]);
+        LCD_String("\n ");
+        LCD_String(ic_names[cur + 1]);
+        if(cur < ic_kinds - 2){
+            LCD_Locate(1,15);
+            LCD_Character(allow);       //まだ下に項目があるときは、矢印を表示
+        }
+                /* 最終項目では、下の段を選択 */
+    } else if(cur == ic_kinds - 1){
+        LCD_Character(blank);
+        LCD_String(ic_names[cur - 1]);
+        LCD_String("\n");
+        LCD_Character(dot);
+        LCD_String(ic_names[cur]);
+    } else {
+        cur = 0;
+        LCD_Character(dot);
+        LCD_String(ic_names[0]);
+        LCD_String("\n ");
+        LCD_String(ic_names[1]);
+        LCD_Locate(1,15);
+        LCD_Character(allow); 
+    }    
+}
+
 
 void comp_init(void) {
     ADCON1 = 0x0d;
