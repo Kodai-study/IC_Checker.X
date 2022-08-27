@@ -164,7 +164,7 @@ void main() {
     
     while(1){
         
-        /* 現在のモードに合わせて関数を呼び出し 
+        /* 現在のモードに合わせて関数を呼び出し */
         switch(now_mode){
             case HOME :  LED_BLUE = 0;LED_GREEN = 0;LED_RED = 0; menu_mode(); break;
             case CHECK_SELECT : LED_BLUE = 0;LED_GREEN = 0;LED_RED = 1; select_check(); break;
@@ -172,9 +172,7 @@ void main() {
             case ALL_CHECK : LED_BLUE = 1;LED_GREEN = 0;LED_RED = 0; all_check(); break;
             case ALL_RESULT : all_results(); break;
             default : break;
-        }*/
-        TXREG = ++select_item;
-        __delay_ms(1000);
+        }
     }
     
     return;

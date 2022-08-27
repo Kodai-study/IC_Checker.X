@@ -73,26 +73,15 @@ void single_check(int kind){
         case 1 : result = count2_check(1);    break;
         case 2 : result = reg_check(1);   break;
         
-        default : TXREG = kind; while(rx_buf == 0) {;}
-                    if((rx_buf >> 4) == kind) {
+        default : rx_buf = 0;  LCD_Number(kind); TXREG = kind; while(rx_buf == 0) {;}
+                   if((rx_buf >> 4) == kind) {
                         result = rx_buf & 0x0f;
-                    } else {
-                        rx_buf = 0;
-                        TXREG = 0xfe;
-                        while(rx_buf == 0) {
-                            if(now_mode != SINGLE_TEST){
-                                return;
-                            }
-                        }
-                        if((rx_buf >> 4) == kind) {
-                            result = rx_buf & 0x0f;
-                        } else {
-                            LCD_String("ERROR...");
-                            return ;
-                        }
+                    } else { 
+                       result = ERROR;
                     }
-                rx_buf = 0;
-        break;
+                    
+                    LCD_HNumber(rx_buf,2);
+                    rx_buf = 0;  break;
     }
     
     LCD_CursorOff();
@@ -103,8 +92,8 @@ void single_check(int kind){
         case NG : LCD_Clear(); LCD_String(ic_names[select_item]);
             LED_BLUE = 1; LED_GREEN = 1;LED_RED = 0; 
             LCD_String(" : NG!!\nｹｯﾃｲ : ｻｲｼｹﾝ");  break;             //NGなら、2行目に次の指示を表示
-        case ERROR : LCD_Locate(1,0);  LCD_String("ERROR...");  break;
-        default : return;
+        case ERROR :   LCD_String("ERROR...");  break;
+        default : now_mode = CHECK_SELECT; return;
     }
     if(now_mode != SINGLE_TEST)     return;
     now_mode = SINGLE_RESULT;
