@@ -29,11 +29,11 @@
 #define CLOCK(a)  a = 1; __delay_ms(PLUS_TIME); a = 0;
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
 #define T0_WAIT while(t0_flg == 0) {;} t0_flg = 0;
-#define CANCEL_CHECK if(now_mode != SINGLE_TEST && now_mode != ALL_CHECK) return NO_CHECK;
+#define CANCEL_CHECK if(now_mode != SINGLE_TEST && now_mode != ALL_CHECK && now_mode != RETRY) return NO_CHECK;
 #define WAIT_RECEIVE(mode) rx_buf = 0; while(rx_buf == 0) { if(now_mode != mode) return; }
 
 typedef enum _now_mode{
-    HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST
+    HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST, RETRY
 }MODE;
 
 typedef enum __checkstats{
@@ -83,5 +83,7 @@ void mode_change(void);
 void all_check(void);
 void all_results(void);
 void convert(int an_chan);
+CHECK_RESULT retry(int kind);
+void view_names(int cur);
 
 #endif	/* XC_HEADER_TEMPLATE_H */

@@ -14,6 +14,11 @@ int is_info[] = {0};
 //CHECK_RESULT results[10] = {NO_CHECK};  //チェック項目の結果を表す
 CHECK_RESULT results[11] = {NO_CHECK}; ///デバッグ用
 
+const char* mode_names[] = {    //チェックするモードを表示する文字列
+    " ALLﾁｪｯｸ",
+    " ﾀﾝﾀｲﾁｪｯｸ"
+};
+
 static const char dot = 0xa5;     //LCDで、選択項目を表すドットの文字コード
 static const char blank = 0xa0;   //LCDで、空白を表示させるデータ
 static const char allow = 0x7e;   //右矢印〃
@@ -77,14 +82,13 @@ void single_check(int kind){
         case 1 : result = count2_check(1);    break;
         case 2 : result = reg_check(1);   break;
         
-        default : rx_buf = 0;  LCD_Number(kind); TXREG = kind; 
+        default : rx_buf = 0;  TXREG = kind; 
         WAIT_RECEIVE(SINGLE_TEST);
            if((rx_buf >> 4) == kind) {
                 result = rx_buf & 0x0f;
             } else { 
                result = ERROR;
             }
-            LCD_HNumber(rx_buf,2);
             rx_buf = 0;  break;
     }
     
@@ -95,7 +99,9 @@ void single_check(int kind){
             LCD_Locate(1,0); LCD_String("OK!!!       ");  break;      //OKならば2行目にOKを表示
         case NG : LCD_Clear(); LCD_String(ic_names[select_item]);
             LED_BLUE = 1; LED_GREEN = 1;LED_RED = 0; 
-            LCD_String(" : NG!!\nｹｯﾃｲ : ｻｲｼｹﾝ");  break;             //NGなら、2行目に次の指示を表示
+            LCD_String(" : NG!!");
+            LCD_Locate(0,0);
+            LCD_String("ｹｯﾃｲ : ｻｲｼｹﾝ      ");  break;  
         case ERROR :   LCD_String("ERROR...");  break;
         default : now_mode = CHECK_SELECT; return;
     }
@@ -148,9 +154,10 @@ void mode_change(){
         case ALL_CHECK    : cancel();
         case CHECK_SELECT :                 // 全体チェック、選択画面、全体チェックの時はホーム画面に戻る
         case ALL_RESULT   : now_mode = HOME; LCD_Clear(); break;
-               
+        
         case SINGLE_TEST  : cancel();
         case SINGLE_RESULT: now_mode = CHECK_SELECT; LCD_Clear();break; //単体テスト中、単体テストの結果表示の時は項目選択画面に戻る
+        case RETRY        : cancel(); now_mode = ALL_RESULT; LCD_Clear(); break;      
         default : break;
     }
 }
@@ -163,11 +170,12 @@ void all_check(){
     results[0] = seg7_decode(0);
     results[2] = reg_check(0);
     
+    
     WAIT_RECEIVE(ALL_CHECK);
     
-    rx_buf = 0;
-    LCD_Clear();
+    
     if(rx_buf == 0xaa){
+        LCD_Clear();
         LCD_String("ICｦ ﾄﾘｶｴﾃｸﾀﾞｻｲ\nｹｯﾃｲ : ｽｽﾑ");
         while(sw2_flg == 0){ T0_WAIT; sw_check();  }
         LCD_Clear();
@@ -182,6 +190,7 @@ void all_check(){
         now_mode = HOME;
         return;
     }
+    rx_buf = 0;
     TXREG = 0xfe;
     results[1] = count2_check(0);
     if(results[2] != OK){
@@ -212,11 +221,16 @@ int next(int index){
 }
 
 void all_results(){
+    LCD_Clear();
     int cur = 0;
     int index = -1;
+    ng_count = 0;
     for(int i = 0;i < 11;i++){
         if(results[i] != OK){
             if(ng_count == 0){
+                LED_BLUE = 1;
+                LED_RED = 0;
+                LED_GREEN = 1;
                 LCD_String("NGｲﾁﾗﾝ ｺｽｳ : \n");
                 LCD_Character(dot);
                 LCD_String(ic_names[i]);
@@ -229,6 +243,9 @@ void all_results(){
     
     if(ng_count == 0){
         LCD_String("ALL_OK!!!!");
+        LED_BLUE = 1;
+        LED_RED = 1;
+        LED_GREEN = 0;
         sw2_flg = 0;
         sw1_flg = 0;
         while(sw2_flg == 0 && sw1_flg == 0 && now_mode == ALL_CHECK) {
@@ -243,29 +260,33 @@ void all_results(){
     LCD_Locate(0,13);
     LCD_Number(ng_count);
     LCD_Locate(1,0);
-    
+    sw2_flg = 0;
+    sw1_flg = 0;
     while(now_mode == ALL_RESULT){
         T0_WAIT;
         sw_check();
         
         if(sw2_flg != 0){
+            sw2_flg = 0;
             if(index == -1){
-                single_check(next(index));
-            } else {
-                single_check(index);
+                index = next(index);
             }
+            results[index] = retry(index);
+            now_mode = ALL_RESULT;
+            return;
         }
         
         if(sw1_flg == 0 || ng_count == 1)
             continue;
         
+        sw1_flg = 0;
         if(++cur > ng_count){
             cur = 1;
         }
         
         if(cur < ng_count){
             LCD_Clear();
-            sw1_flg = 0;
+            
             index = next(index);
             LCD_Character(dot);
             LCD_String(ic_names[index]);
@@ -283,9 +304,6 @@ void all_results(){
             LCD_Locate(1,0);
             LCD_Character(dot);
         }
-        
-
-        
     }
 }
 
@@ -351,6 +369,64 @@ void view_names(int cur){
         LCD_Character(allow); 
     }    
 }
+
+CHECK_RESULT retry(int kind){
+    now_mode = RETRY;
+    CHECK_RESULT result = NO_CHECK;
+    LCD_Clear();
+    LCD_Number(kind);
+    if(kind == 2){
+        LCD_String("3ﾀﾝｼREG"); 
+    } else if(kind == 4){
+        LCD_String("7ｾｸﾞLED"); 
+    } else{
+        LCD_String(ic_names[kind]);
+    }
+    LCD_String(" check...\n");
+    //result = check_funcs[kind]();
+    /* 選択されたICを単体チェックして、結果を変数に格納 */
+    if(kind > 10){
+        LCD_String("ERROR...");
+        return NG;
+    }
+    switch(kind){
+        case 0 : result = seg7_decode(1); break;
+        case 1 : result = count2_check(1);    break;
+        case 2 : result = reg_check(1);   break;
+        
+        default : rx_buf = 0;  TXREG = kind; 
+             while(rx_buf == 0) { if(now_mode != RETRY) return NG; }
+            if((rx_buf >> 4) == kind) {
+                result = rx_buf & 0x0f;
+            } else { 
+               result = ERROR;
+            }
+            rx_buf = 0;  break;
+    }
+    /* チェックの結果を表示 */
+    switch(result){
+        case OK : 
+            LED_BLUE = 1; LED_GREEN = 0;LED_RED = 1; 
+            LCD_Locate(1,0);
+            now_mode = ALL_RESULT;
+            LCD_String("OK!!!       "); 
+            __delay_ms(700);
+            return OK;
+            break;
+        case NG : 
+            LED_BLUE = 1; LED_GREEN = 1;LED_RED = 0; 
+            now_mode = ALL_RESULT;
+            LCD_String(" : NG!!");
+            __delay_ms(1000);
+            return NG;
+            break;
+        /*default : LCD_Clear();  LCD_String("ERROR...");  
+            __delay_ms(1000);
+            return NG;
+            break;*/
+    }
+}
+
 
 
 void comp_init(void) {

@@ -100,10 +100,7 @@ const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
 };
 const int ic_kinds = sizeof(ic_names) / sizeof(char*);  //チェックする項目の数
 
-const char* mode_names[] = {    //チェックするモードを表示する文字列
-    " ALLﾁｪｯｸ",
-    " ﾀﾝﾀｲﾁｪｯｸ"
-};
+
 
 char st[2][17] = {0};                   //LCDに表示する文字列
 MODE now_mode = HOME;                   //現在の動作モード
@@ -206,8 +203,9 @@ void __interrupt ( ) isr (void){
     /* USARTで値を受け取ったとき */
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
-        LCD_Number(RCREG);
         rx_buf = RCREG;
+        LCD_Number(rx_buf);
+        
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){
@@ -215,7 +213,7 @@ void __interrupt ( ) isr (void){
         TMR0H = (65035 >> 8);
         TMR0L = (65035 & 0xff);
         t0_flg = 1;
-        if((now_mode == SINGLE_TEST || now_mode == ALL_CHECK) && ++blink_cnt == 250){
+        if((now_mode == SINGLE_TEST || now_mode == ALL_CHECK || now_mode == RETRY) && ++blink_cnt == 250){
             LED_RED = ~LED_RED;
             LED_GREEN = LED_RED;
             LED_BLUE = 1;

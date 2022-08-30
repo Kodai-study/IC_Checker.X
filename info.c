@@ -6,8 +6,4 @@
  */
 
 
-#include <xc.h>
-
-void main(void) {
-    return;
-}
+#include "datas.h"

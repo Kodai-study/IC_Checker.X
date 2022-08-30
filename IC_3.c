@@ -51,6 +51,8 @@ int value_check(int value);
 void num_input(int value);
 void set_7seg(int value);
 
+
+
 CHECK_RESULT count2_check(int mode){
     TRISC = (TRISC & 0xc0) | COUNT_TRIS_C;  //6,7ビット目をそのままに、ポートCの入出力設定
     TRISD = COUNT_TRIS_D;                   
@@ -64,37 +66,50 @@ CHECK_RESULT count2_check(int mode){
     for(int i = 0;i < 16;i++){
         CANCEL_CHECK;
         if(!value_check(i)){    //値が違っていたら検査終了
+            TRISC = 0xff;
+            TRISD |= 0x3f;
             return NG;
         }
         CLOCK(CLK);
     }
     if(!value_check(0)){
+        TRISC = 0xff;
+        TRISD |= 0x3f;
         return NG;
     }
-    LCD_String("ｶｳﾝﾄﾀﾞｳﾝ");
-    __delay_ms(500);
     D_U = 1;        //カウントダウンモードに
     CLOCK(CLK);
     for(int i = 15;i >= 0;i--){ //値が15?0に変化する
         CANCEL_CHECK;
         if(!value_check(i)){
+            TRISC = 0xff;
+            TRISD |= 0x3f;
            return NG;
         }
         CLOCK(CLK);
     }
     if(!value_check(15)){
+        TRISC = 0xff;
+        TRISD |= 0x3f;
         return NG;
     }
     num_input(0);       //値を0にする(1?0に変化するか)
     DOWN_CLOCK(LOAD);
     if(!value_check(0)){
+        TRISC = 0xff;
+        TRISD |= 0x3f;
        return NG;
     }
+    
     num_input(15);      //値を15に(0?1の変化)
     DOWN_CLOCK(LOAD);
     if(value_check(15)){
+        TRISC = 0xff;
+        TRISD |= 0x3f;      
         return OK;
     } else {
+        TRISC = 0xff;
+        TRISD |= 0x3f;
         return NG;
     }
 }
@@ -108,31 +123,52 @@ CHECK_RESULT seg7_decode(int mode){
     L_ENABLE = 0;
     BLANK = 1;
     
+    /* 入力を1→15に変化させて出力値の変化を見る */
     for(int i = 0;i <= 15;i++){
-        LCD_Clear();
+        CANCEL_CHECK;
         set_7seg(i);
-        if(!check_pattern(i < 10 ? i : ALL_OFF)){    //10以上の数字を入れるとALL_OFFになるように
+        if(!check_pattern(i < 10 ? i : ALL_OFF)){    //10以上の数字を入れるとALL_OFFになる
+            TRISC = 0xff;
+            TRISD |= 0x3f;
             return NG;
         }
+        
     }
     /* ランプテスト入力を入れて、ALL_ONを確認 */
+    CANCEL_CHECK;
     LANP_T = 0;
     LCD_Clear();
-    if(!check_pattern(ALL_ON))  return NG;
-       
+    if(!check_pattern(ALL_ON)){  
+        TRISC = 0xff;
+        TRISD |= 0x3f;
+        return NG;
+    }
     LANP_T = 1;
+    
     /* BLANK入力を入れて、ALL_OFFを確認 */
+    CANCEL_CHECK;
     BLANK = 0;
     LCD_Clear();
-    if(!check_pattern(ALL_OFF))  return NG;
-    
+    if(!check_pattern(ALL_OFF)) { 
+        TRISC = 0xff;
+        TRISD |= 0x3f;
+        return NG; 
+    }
     BLANK = 1;
+    
     /* ENABLE入力を入れたときに入力が変化しない */
+    CANCEL_CHECK;
     set_7seg(0);
     L_ENABLE = 1;
     LCD_String("\n");
     set_7seg(1);
-    if(!check_pattern(0))  return NG;
+    if(!check_pattern(0))  {
+        TRISC = 0xff;
+        TRISD |= 0x3f;
+        return NG;
+    }
+    TRISC = 0xff;
+    TRISD |= 0x3f;
     return OK;
 }
 
@@ -143,11 +179,16 @@ int value_check(int value){
     if(Q_C) data |= 4;
     if(Q_D) data |= 8;
     
-    LCD_Clear();
-    LCD_HNumber(data,1);
-    __delay_ms(300);
-    if(MAX_MIN != 0) LCD_String("MAX/MIN");
-    if(R_CK == 0)  LCD_String("RCO");
+    LCD_Locate(1,0);
+    if(D_U == 0){
+        LCD_String("UP   ");
+    } else {
+        LCD_String("DOWN ");
+    }
+    
+    LCD_Number(data);
+    LCD_String("      ");
+    __delay_ms(100);
     
     if(value == 0){
         return (data == value) && (MAX_MIN == D_U) && (R_CK != D_U);
@@ -179,16 +220,17 @@ int check_pattern(int value){
     if(LED_E) data |= 0x10;
     if(LED_F) data |= 0x20;
     if(LED_G) data |= 0x40;
-    LCD_String(" d ");
+    LCD_Locate(1,0);
+    LCD_Number(value);
+    LCD_Character(':');
     LCD_HNumber(data, 2);
-    __delay_ms(500);
+    LCD_String("      ");
+    __delay_ms(100);
     return (data == patterns[value]);
     
 }
 
 void set_7seg(int value){
-    LCD_String("set ");
-    LCD_Number(value);
     DATA_1 = ((value & 1) != 0);
     DATA_2 = ((value & 2) != 0);
     DATA_3 = ((value & 4) != 0);
