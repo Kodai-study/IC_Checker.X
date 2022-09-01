@@ -83,6 +83,7 @@ _Bool sw1_flg = 0;  //スイッチ1が押された時に1になる
 _Bool sw2_flg = 0;  //スイッチ2が押されたときに1になる
 int hoge_count = 0;
 char rx_buf = 0;    //USARTで受け取った値を保存
+_Bool rx_flg = 0;
 int mode = 1;       
 
 const char* ic_names[] = {  //LCDに表示するための、チェック項目の文字列
@@ -138,11 +139,14 @@ void main() {
     LED_GREEN = 0;
     LED_BLUE = 0;
     
+
+    
     SW_TRIS = 0; 
     POWER_SW = 1;   //電源リレーをオンにして電源を供給
-    __delay_ms(50);
     
     usart_init();
+        
+    __delay_ms(50);
     
     while(1){
         
@@ -194,7 +198,7 @@ void __interrupt ( ) isr (void){
     if(PIR2bits.CMIF != 0){ //コンパレータの出力が変化した割り込み。
         PIR2bits.CMIF = 0;
         if(CMCONbits.C1OUT != 0){       //C1の出力が基準電圧を超えた→過電流
-            //POWER_SW = 0;               //電源を停止
+            POWER_SW = 0;               //電源を停止
             current_over();
             stop = 1;                  
         }
@@ -204,8 +208,8 @@ void __interrupt ( ) isr (void){
     if(PIR1bits.RCIF != 0){
         PIR1bits.RCIF = 0;
         rx_buf = RCREG;
+        rx_flg = 1;
         LCD_Number(rx_buf);
-        
     }
     /* タイマ0割り込み(1ms)が起きたとき */
     if(INTCONbits.TMR0IF != 0){

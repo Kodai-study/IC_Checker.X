@@ -82,7 +82,7 @@ void single_check(int kind){
         case 1 : result = count2_check(1);    break;
         case 2 : result = reg_check(1);   break;
         
-        default : rx_buf = 0;  TXREG = kind; 
+        default : rx_flg = 0;  TXREG = kind; 
         WAIT_RECEIVE(SINGLE_TEST);
            if((rx_buf >> 4) == kind) {
                 result = rx_buf & 0x0f;
@@ -165,14 +165,12 @@ void mode_change(){
 void all_check(){
     LCD_Clear();
     LCD_String("Áª¯¸Á­³...");
-    rx_buf = 0;
+    rx_flg = 0;
     TXREG = 0xff;
     results[0] = seg7_decode(0);
     results[2] = reg_check(0);
     
-    
     WAIT_RECEIVE(ALL_CHECK);
-    
     
     if(rx_buf == 0xaa){
         LCD_Clear();
@@ -190,7 +188,7 @@ void all_check(){
         now_mode = HOME;
         return;
     }
-    rx_buf = 0;
+    rx_flg = 0;
     TXREG = 0xfe;
     results[1] = count2_check(0);
     if(results[2] != OK){

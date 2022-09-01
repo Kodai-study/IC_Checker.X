@@ -22,7 +22,6 @@
 #define LED_BLUE  LAT(B,4)
 
 
-
 #define POWER_SW LAT(A,3)     //チェック項目へ流す電源を接続するスイッチ
 #define SW_TRIS  TRIS(A,3)   //電源制御リレー
 
@@ -30,7 +29,7 @@
 #define DOWN_CLOCK(a)  a = 0; __delay_ms(PLUS_TIME); a = 1;
 #define T0_WAIT while(t0_flg == 0) {;} t0_flg = 0;
 #define CANCEL_CHECK if(now_mode != SINGLE_TEST && now_mode != ALL_CHECK && now_mode != RETRY) return NO_CHECK;
-#define WAIT_RECEIVE(mode) rx_buf = 0; while(rx_buf == 0) { if(now_mode != mode) return; }
+#define WAIT_RECEIVE(mode)  while(rx_flg == 0) { if(now_mode != mode) return; }  rx_flg = 0;
 
 typedef enum _now_mode{
     HOME, ALL_CHECK, CHECK_SELECT, ALL_RESULT, SINGLE_RESULT, SINGLE_TEST, RETRY
@@ -57,6 +56,7 @@ extern int select_item;
 extern char rx_buf;
 extern CHECK_RESULT (*check_funcs[])(int);
 extern CHECK_RESULT results[];
+extern _Bool rx_flg;
 
 CHECK_RESULT dff_Check(int mode);
 CHECK_RESULT nand_check(int mode);
